@@ -16,8 +16,8 @@ final maxDailySpendingProvider = Provider<double>((ref) {
   final currentMonthExpenses = expenses.where((e) => 
       e.date.year == now.year && e.date.month == now.month).toList();
 
-  // 2. Kalkulasi total yang sudah dihabiskan bulan ini
-  final totalSpent = currentMonthExpenses.fold(0.0, (sum, item) => sum + item.amount);
+  // 2. Kalkulasi total yang sudah dihabiskan bulan ini (MENGGUNAKAN totalAmount)
+  final totalSpent = currentMonthExpenses.fold(0.0, (sum, item) => sum + item.totalAmount);
   
   // 3. Sisa saldo bulanan
   final remainingBalance = currentBalance - totalSpent;

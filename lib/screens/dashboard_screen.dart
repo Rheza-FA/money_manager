@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../theme/app_colors.dart';
 import '../widgets/balance_overview_circle.dart';
 import '../widgets/daily_limit_card.dart';
@@ -8,6 +9,7 @@ import '../widgets/transaction_card.dart';
 import '../providers/database_provider.dart';
 import '../providers/calculator_provider.dart';
 import '../providers/history_provider.dart';
+import '../widgets/input_bottom_sheet.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -16,12 +18,16 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final balanceAsync = ref.watch(currentMonthBalanceProvider);
     final maxDailySpending = ref.watch(maxDailySpendingProvider);
-    
+
     final activeFilter = ref.watch(timeFilterProvider);
     final filteredExpenses = ref.watch(filteredExpensesProvider);
     final totalExpense = ref.watch(filteredTotalExpenseProvider);
-    
-    final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    final formatCurrency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundTop,
@@ -36,7 +42,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
           ),
-          
+
           SafeArea(
             bottom: false,
             child: CustomScrollView(
@@ -65,8 +71,12 @@ class DashboardScreen extends ConsumerWidget {
                             shape: BoxShape.circle,
                             boxShadow: AppColors.softShadow,
                           ),
-                          child: const Icon(Icons.more_vert, color: AppColors.primaryDark, size: 18),
-                        )
+                          child: const Icon(
+                            Icons.more_vert,
+                            color: AppColors.primaryDark,
+                            size: 18,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -80,11 +90,20 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     loading: () => const SizedBox(
                       height: 300,
-                      child: Center(child: CircularProgressIndicator(color: AppColors.primaryDark)),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
                     ),
                     error: (e, st) => SizedBox(
                       height: 300,
-                      child: Center(child: Text("Error: $e", style: const TextStyle(color: AppColors.primaryDark))),
+                      child: Center(
+                        child: Text(
+                          "Error: $e",
+                          style: const TextStyle(color: AppColors.primaryDark),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -99,6 +118,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
 
                 // 4. Integrated Filter Chips
+                // 4. Integrated Filter Chips & Calendar
                 SliverToBoxAdapter(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -106,6 +126,46 @@ class DashboardScreen extends ConsumerWidget {
                     physics: const BouncingScrollPhysics(),
                     child: Row(
                       children: [
+                        // Tombol Kalender Melayang
+                        GestureDetector(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: ref.read(customDateProvider) ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(), // Memblokir seleksi masa depan
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: const ColorScheme.light(
+                                      primary: AppColors.primaryDark,
+                                      onPrimary: AppColors.white,
+                                      onSurface: AppColors.primaryDark,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (date != null) {
+                              // UBAH BARIS INI: Gunakan .setDate(date)
+                              ref.read(customDateProvider.notifier).setDate(date); 
+                              ref.read(timeFilterProvider.notifier).setFilter(TimeFilter.customDate);
+                            }
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: activeFilter == TimeFilter.customDate ? AppColors.primaryDark : AppColors.white.withOpacity(0.6),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: activeFilter == TimeFilter.customDate ? Colors.transparent : AppColors.white, width: 1.5),
+                              boxShadow: activeFilter == TimeFilter.customDate ? AppColors.softShadow : null,
+                            ),
+                            child: Icon(Icons.calendar_month_rounded, size: 18, color: activeFilter == TimeFilter.customDate ? AppColors.white : AppColors.primaryLight),
+                          ),
+                        ),
+                        
                         _buildFilterChip(context, ref, "Hari Ini", TimeFilter.daily, activeFilter),
                         _buildFilterChip(context, ref, "Bulan Ini", TimeFilter.monthly, activeFilter),
                         _buildFilterChip(context, ref, "6 Bulan", TimeFilter.sixMonths, activeFilter),
@@ -127,11 +187,19 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         const Text(
                           "Transactions",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
                         Text(
                           "- ${formatCurrency.format(totalExpense)}",
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.greyText),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.greyText,
+                          ),
                         ),
                       ],
                     ),
@@ -148,7 +216,10 @@ class DashboardScreen extends ConsumerWidget {
                       child: Center(
                         child: Text(
                           "No transactions found.",
-                          style: TextStyle(color: AppColors.greyText, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            color: AppColors.greyText,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
@@ -158,7 +229,8 @@ class DashboardScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => TransactionCard(expense: filteredExpenses[index]),
+                        (context, index) =>
+                            TransactionCard(expense: filteredExpenses[index]),
                         childCount: filteredExpenses.length,
                       ),
                     ),
@@ -196,12 +268,25 @@ class DashboardScreen extends ConsumerWidget {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add_rounded, color: AppColors.primaryDark),
-                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.add_rounded,
+                        color: AppColors.primaryDark,
+                      ),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true, // Wajib true agar modal bisa membesar saat keyboard muncul
+                          backgroundColor: Colors.transparent, // Transparan agar border radius modal terlihat
+                          builder: (context) => const InputBottomSheet(),
+                        );
+                      },
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.pie_chart_rounded, color: AppColors.greyText),
+                    icon: const Icon(
+                      Icons.pie_chart_rounded,
+                      color: AppColors.greyText,
+                    ),
                     onPressed: () {},
                   ),
                 ],
@@ -213,7 +298,13 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterChip(BuildContext context, WidgetRef ref, String label, TimeFilter filter, TimeFilter activeFilter) {
+  Widget _buildFilterChip(
+    BuildContext context,
+    WidgetRef ref,
+    String label,
+    TimeFilter filter,
+    TimeFilter activeFilter,
+  ) {
     final isActive = filter == activeFilter;
     return GestureDetector(
       onTap: () => ref.read(timeFilterProvider.notifier).setFilter(filter),
@@ -222,7 +313,9 @@ class DashboardScreen extends ConsumerWidget {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryDark : AppColors.white.withOpacity(0.6),
+          color: isActive
+              ? AppColors.primaryDark
+              : AppColors.white.withOpacity(0.6),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isActive ? Colors.transparent : AppColors.white,

@@ -1,114 +1,242 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../theme/app_colors.dart';
 import '../widgets/balance_overview_circle.dart';
 import '../widgets/daily_limit_card.dart';
+import '../widgets/transaction_card.dart';
 import '../providers/database_provider.dart';
 import '../providers/calculator_provider.dart';
+import '../providers/history_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Membaca state dari Riverpod
     final balanceAsync = ref.watch(currentMonthBalanceProvider);
     final maxDailySpending = ref.watch(maxDailySpendingProvider);
+    
+    final activeFilter = ref.watch(timeFilterProvider);
+    final filteredExpenses = ref.watch(filteredExpensesProvider);
+    final totalExpense = ref.watch(filteredTotalExpenseProvider);
+    
+    final formatCurrency = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppColors.bgGradient,
+      backgroundColor: AppColors.backgroundTop,
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: AppColors.bgGradient,
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              // Header Typography
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Your Balance\nOverview",
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDark,
-                        height: 1.1,
-                        letterSpacing: -1,
-                      ),
+          
+          SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // 1. Minimalist Top Bar
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(32, 16, 32, 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Overview",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: AppColors.softShadow,
+                          ),
+                          child: const Icon(Icons.more_vert, color: AppColors.primaryDark, size: 18),
+                        )
+                      ],
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      "Track spending, limits, and insights",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.greyText,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              
-              // Tengah: Sirkuler Saldo
-              balanceAsync.when(
-                data: (balanceData) => BalanceOverviewCircle(
-                  balance: balanceData?.balance ?? 0.0,
-                ),
-                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryDark)),
-                error: (e, st) => Center(child: Text("Error: $e")),
-              ),
 
-              const Spacer(), // Mendorong kartu hijau ke bawah
-              
-              // Bawah: Kartu Max Spending
-              DailyLimitCard(maxDaily: maxDailySpending),
-              
-              const SizedBox(height: 32),
-            ],
-          ),
-        ),
-      ),
-      // Floating Action Button meniru kapsul nav bawah
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Container(
-        height: 64,
-        margin: const EdgeInsets.symmetric(horizontal: 64),
-        decoration: BoxDecoration(
-          color: AppColors.primaryDark,
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.home_rounded, color: AppColors.white),
-              onPressed: () {},
+                // 2. Main Balance Circle
+                SliverToBoxAdapter(
+                  child: balanceAsync.when(
+                    data: (balanceData) => BalanceOverviewCircle(
+                      balance: balanceData?.balance ?? 0.0,
+                    ),
+                    loading: () => const SizedBox(
+                      height: 300,
+                      child: Center(child: CircularProgressIndicator(color: AppColors.primaryDark)),
+                    ),
+                    error: (e, st) => SizedBox(
+                      height: 300,
+                      child: Center(child: Text("Error: $e", style: const TextStyle(color: AppColors.primaryDark))),
+                    ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+                // 3. Daily Limit Card
+                SliverToBoxAdapter(
+                  child: DailyLimitCard(maxDaily: maxDailySpending),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+
+                // 4. Integrated Filter Chips
+                SliverToBoxAdapter(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        _buildFilterChip(context, ref, "Hari Ini", TimeFilter.daily, activeFilter),
+                        _buildFilterChip(context, ref, "Bulan Ini", TimeFilter.monthly, activeFilter),
+                        _buildFilterChip(context, ref, "6 Bulan", TimeFilter.sixMonths, activeFilter),
+                        _buildFilterChip(context, ref, "Tahun Ini", TimeFilter.yearly, activeFilter),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                // 5. Section Header & Dynamic Total
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          "Transactions",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                        ),
+                        Text(
+                          "- ${formatCurrency.format(totalExpense)}",
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.greyText),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+                // 6. Fluid Transaction List (No nested scroll constraints)
+                if (filteredExpenses.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: Center(
+                        child: Text(
+                          "No transactions found.",
+                          style: TextStyle(color: AppColors.greyText, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => TransactionCard(expense: filteredExpenses[index]),
+                        childCount: filteredExpenses.length,
+                      ),
+                    ),
+                  ),
+
+                // Spacer to avoid bottom nav bar collision
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              ],
             ),
-            Container(
-              decoration: const BoxDecoration(color: AppColors.white, shape: BoxShape.circle),
-              child: IconButton(
-                icon: const Icon(Icons.add, color: AppColors.primaryDark),
-                onPressed: () {
-                  // TODO: Navigasi ke Halaman Input Pengeluaran
-                },
+          ),
+
+          // 7. Floating Bottom Navigation Bar
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 72,
+              margin: const EdgeInsets.only(bottom: 24, left: 32, right: 32),
+              decoration: BoxDecoration(
+                color: AppColors.primaryDark,
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: AppColors.softShadow,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.home_filled, color: AppColors.white),
+                    onPressed: () {},
+                  ),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const BoxDecoration(
+                      color: AppColors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.add_rounded, color: AppColors.primaryDark),
+                      onPressed: () {},
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.pie_chart_rounded, color: AppColors.greyText),
+                    onPressed: () {},
+                  ),
+                ],
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.pie_chart_outline, color: AppColors.greyText),
-              onPressed: () {},
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(BuildContext context, WidgetRef ref, String label, TimeFilter filter, TimeFilter activeFilter) {
+    final isActive = filter == activeFilter;
+    return GestureDetector(
+      onTap: () => ref.read(timeFilterProvider.notifier).setFilter(filter),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryDark : AppColors.white.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isActive ? Colors.transparent : AppColors.white,
+            width: 1.5,
+          ),
+          boxShadow: isActive ? AppColors.softShadow : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+            color: isActive ? AppColors.white : AppColors.primaryLight,
+          ),
         ),
       ),
     );

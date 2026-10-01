@@ -4,7 +4,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/expense.dart';
 import 'models/monthly_balance.dart';
-import 'providers/database_provider.dart'; // Baris yang tertinggal tadi
+import 'providers/database_provider.dart';
 import 'screens/dashboard_screen.dart';
 
 void main() async {
@@ -33,12 +33,12 @@ class MoneyManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Money Manager',
-      debugShowCheckedModeBanner: false, // Matikan pita debug merah
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'Montserrat', // Sangat disarankan pakai font sans-serif modern
+        fontFamily: 'Montserrat',
         useMaterial3: true,
       ),
-      home: const DashboardScreen(), // Arahkan ke sini
+      home: const DashboardScreen(),
     );
   }
 }

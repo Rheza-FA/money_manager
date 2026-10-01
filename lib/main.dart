@@ -6,13 +6,14 @@ import 'models/expense.dart';
 import 'models/monthly_balance.dart';
 import 'providers/database_provider.dart';
 import 'screens/dashboard_screen.dart';
+import 'models/app_settings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final dir = await getApplicationDocumentsDirectory();
   final isar = await Isar.open(
-    [ExpenseSchema, MonthlyBalanceSchema],
+    [ExpenseSchema, MonthlyBalanceSchema, AppSettingsSchema],
     directory: dir.path,
   );
 

@@ -9,10 +9,12 @@ class Expense {
   @Index(type: IndexType.value)
   late DateTime date;
 
-  late double amount;
+  late String name;
   
-  late String description;
+  late int quantity;
   
-  // Opsional untuk filter masa depan (makanan, transportasi, dll)
-  String? category; 
+  late double price;
+  
+  // Total harga (quantity * price). Disimpan statis agar Isar bisa membaca tanpa komputasi ulang.
+  late double totalAmount; 
 }

@@ -48,40 +48,6 @@ class DashboardScreen extends ConsumerWidget {
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // 1. Minimalist Top Bar
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(32, 16, 32, 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Overview",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryDark,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: AppColors.softShadow,
-                          ),
-                          child: const Icon(
-                            Icons.more_vert,
-                            color: AppColors.primaryDark,
-                            size: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
                 // 2. Main Balance Circle
                 SliverToBoxAdapter(
                   child: balanceAsync.when(
@@ -131,7 +97,9 @@ class DashboardScreen extends ConsumerWidget {
                           onTap: () async {
                             final date = await showDatePicker(
                               context: context,
-                              initialDate: ref.read(customDateProvider) ?? DateTime.now(),
+                              initialDate:
+                                  ref.read(customDateProvider) ??
+                                  DateTime.now(),
                               firstDate: DateTime(2020),
                               lastDate: DateTime.now(), // Memblokir seleksi masa depan
                               builder: (context, child) {
@@ -149,27 +117,70 @@ class DashboardScreen extends ConsumerWidget {
                             );
                             if (date != null) {
                               // UBAH BARIS INI: Gunakan .setDate(date)
-                              ref.read(customDateProvider.notifier).setDate(date); 
-                              ref.read(timeFilterProvider.notifier).setFilter(TimeFilter.customDate);
+                              ref
+                                  .read(customDateProvider.notifier)
+                                  .setDate(date);
+                              ref
+                                  .read(timeFilterProvider.notifier)
+                                  .setFilter(TimeFilter.customDate);
                             }
                           },
                           child: Container(
                             margin: const EdgeInsets.only(right: 12),
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: activeFilter == TimeFilter.customDate ? AppColors.primaryDark : AppColors.white.withOpacity(0.6),
+                              color: activeFilter == TimeFilter.customDate
+                                  ? AppColors.primaryDark
+                                  : AppColors.white.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
-                              border: Border.all(color: activeFilter == TimeFilter.customDate ? Colors.transparent : AppColors.white, width: 1.5),
-                              boxShadow: activeFilter == TimeFilter.customDate ? AppColors.softShadow : null,
+                              border: Border.all(
+                                color: activeFilter == TimeFilter.customDate
+                                    ? Colors.transparent
+                                    : AppColors.white,
+                                width: 1.5,
+                              ),
+                              boxShadow: activeFilter == TimeFilter.customDate
+                                  ? AppColors.softShadow
+                                  : null,
                             ),
-                            child: Icon(Icons.calendar_month_rounded, size: 18, color: activeFilter == TimeFilter.customDate ? AppColors.white : AppColors.primaryLight),
+                            child: Icon(
+                              Icons.calendar_month_rounded,
+                              size: 18,
+                              color: activeFilter == TimeFilter.customDate
+                                  ? AppColors.white
+                                  : AppColors.primaryLight,
+                            ),
                           ),
                         ),
-                        
-                        _buildFilterChip(context, ref, "Hari Ini", TimeFilter.daily, activeFilter),
-                        _buildFilterChip(context, ref, "Bulan Ini", TimeFilter.monthly, activeFilter),
-                        _buildFilterChip(context, ref, "6 Bulan", TimeFilter.sixMonths, activeFilter),
-                        _buildFilterChip(context, ref, "Tahun Ini", TimeFilter.yearly, activeFilter),
+
+                        _buildFilterChip(
+                          context,
+                          ref,
+                          "Hari Ini",
+                          TimeFilter.daily,
+                          activeFilter,
+                        ),
+                        _buildFilterChip(
+                          context,
+                          ref,
+                          "Bulan Ini",
+                          TimeFilter.monthly,
+                          activeFilter,
+                        ),
+                        _buildFilterChip(
+                          context,
+                          ref,
+                          "6 Bulan",
+                          TimeFilter.sixMonths,
+                          activeFilter,
+                        ),
+                        _buildFilterChip(
+                          context,
+                          ref,
+                          "Tahun Ini",
+                          TimeFilter.yearly,
+                          activeFilter,
+                        ),
                       ],
                     ),
                   ),
@@ -315,7 +326,7 @@ class DashboardScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.primaryDark
-              : AppColors.white.withOpacity(0.6),
+              : AppColors.white.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isActive ? Colors.transparent : AppColors.white,

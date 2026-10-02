@@ -14,7 +14,7 @@ class AppColors {
   // Efek shadow premium berstandar iOS/Modern UI
   static List<BoxShadow> get softShadow => [
     BoxShadow(
-      color: primaryDark.withOpacity(0.04),
+      color: primaryDark.withValues(alpha: 0.04),
       blurRadius: 40,
       spreadRadius: 0,
       offset: const Offset(0, 16),

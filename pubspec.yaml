@@ -40,6 +40,7 @@ dependencies:
   path_provider: ^2.1.6
   fl_chart: ^1.2.0
   intl: ^0.20.3
+  google_fonts: ^6.2.1 # [DIINJEKSIKAN SECARA PRESISI]
 
 dev_dependencies:
   flutter_test:

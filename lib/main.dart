@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart'; // IMPORT DITAMBAHKAN UNTUK TYPOGRAPHY GLOBAL
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'models/expense.dart';
@@ -36,7 +37,11 @@ class MoneyManagerApp extends StatelessWidget {
       title: 'Money Manager',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'Montserrat',
+        // ROOT CAUSE FIX: Menghapus hardcode fontFamily: 'Montserrat' untuk menghindari bloat/konflik.
+        // Menginjeksi Plus Jakarta Sans secara presisi ke seluruh struktur TextTheme Material 3.
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          Theme.of(context).textTheme,
+        ),
         useMaterial3: true,
       ),
       home: const DashboardScreen(),

@@ -15,67 +15,76 @@ class BalanceOverviewCircle extends StatefulWidget {
 
 class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with TickerProviderStateMixin {
   late final AnimationController _spinController;
+  late final AnimationController _entranceController;
   late final AnimationController _scaleController;
-  late final Animation<double> _scaleAnimation;
+  
+  late final NumberFormat _formatNumber;
+  
   bool _isObscured = false; 
 
   @override
   void initState() {
     super.initState();
     
+    _formatNumber = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: '',
+      decimalDigits: 0,
+    );
+    
+    // REFINED: Rotasi diperlambat ekstrem ke 24 detik untuk kesan "calm & premium"
     _spinController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: const Duration(seconds: 24),
     )..repeat();
+
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400), // Sedikit diperlambat untuk keanggunan
+    );
 
     _scaleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
-      lowerBound: 0.0,
+      lowerBound: 0.85,
       upperBound: 1.0,
+      value: 1.0, 
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.94).animate(
-      CurvedAnimation(
-        parent: _scaleController,
-        curve: Curves.easeOutCirc,
-        reverseCurve: Curves.easeIn,
-      ),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _entranceController.animateTo(1.0, curve: Curves.easeOutCubic);
+      }
+    });
   }
 
   @override
   void dispose() {
     _spinController.dispose();
+    _entranceController.dispose();
     _scaleController.dispose();
     super.dispose();
   }
 
   void _onTapDown(TapDownDetails details) {
-    HapticFeedback.selectionClick();
-    _scaleController.forward();
+    HapticFeedback.lightImpact(); 
+    _scaleController.animateTo(0.96, duration: const Duration(milliseconds: 100), curve: Curves.easeOutQuad);
   }
 
   void _onTapUp(TapUpDetails details) {
-    HapticFeedback.lightImpact();
-    _scaleController.reverse();
+    HapticFeedback.mediumImpact(); 
+    _scaleController.animateTo(1.0, duration: const Duration(milliseconds: 600), curve: Curves.elasticOut);
+    
     setState(() {
       _isObscured = !_isObscured;
     });
   }
 
   void _onTapCancel() {
-    _scaleController.reverse();
+    _scaleController.animateTo(1.0, duration: const Duration(milliseconds: 600), curve: Curves.elasticOut);
   }
 
   @override
   Widget build(BuildContext context) {
-    final formatNumber = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: '',
-      decimalDigits: 0,
-    );
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: AspectRatio(
@@ -86,7 +95,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
           onTapCancel: _onTapCancel,
           behavior: HitTestBehavior.opaque,
           child: ScaleTransition(
-            scale: _scaleAnimation,
+            scale: _scaleController, 
             child: Stack(
               children: [
                 // 1. Lapangan Belakang: Container Putih Solid & Bayangan
@@ -96,7 +105,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                     color: AppColors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryDark.withOpacity(0.04),
+                        color: AppColors.primaryDark.withValues(alpha: 0.04),
                         blurRadius: 30,
                         spreadRadius: 0,
                         offset: const Offset(0, 16),
@@ -105,14 +114,15 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                   ),
                 ),
 
-                // 2. Lapisan Tengah: CustomPaint untuk Cincin Aura (Sekarang di atas container putih)
+                // 2. Lapisan Tengah: CustomPaint untuk Aura Ambient Cahaya
                 Positioned.fill(
                   child: AnimatedBuilder(
-                    animation: _spinController,
+                    animation: Listenable.merge([_spinController, _entranceController]),
                     builder: (context, child) {
                       return CustomPaint(
                         painter: _AuraRingPainter(
                           rotation: _spinController.value * 2 * math.pi,
+                          entranceProgress: _entranceController.value,
                         ),
                       );
                     },
@@ -129,7 +139,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.greyText.withOpacity(0.8),
+                          color: AppColors.greyText.withValues(alpha: 0.8),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -146,58 +156,61 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: _isObscured 
-                                    ? AppColors.greyText.withOpacity(0.5) 
-                                    : AppColors.primaryDark.withOpacity(0.7),
+                                    ? AppColors.greyText.withValues(alpha: 0.5) 
+                                    : AppColors.primaryDark.withValues(alpha: 0.7),
                               ),
                             ),
                           ),
                           const SizedBox(width: 4),
+                          
+                          // REFINED: Animasi "Vault Lock" (Scale + Fade, No Bouncing)
                           AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 350),
-                            switchInCurve: Curves.easeOutBack,
-                            switchOutCurve: Curves.easeIn,
+                            duration: const Duration(milliseconds: 400),
+                            switchInCurve: Curves.easeOutQuart,
+                            switchOutCurve: Curves.easeInQuad,
                             transitionBuilder: (child, animation) {
                               return FadeTransition(
                                 opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0.0, 0.2),
-                                    end: Offset.zero,
-                                  ).animate(animation),
+                                child: ScaleTransition(
+                                  // Skala mikro (96% ke 100%) untuk ilusi kedalaman tanpa mendisrupsi layout
+                                  scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
                                   child: child,
                                 ),
                               );
                             },
                             child: Text(
-                              _isObscured ? "•••••••" : formatNumber.format(widget.balance),
+                              _isObscured ? "• • • • • • •" : _formatNumber.format(widget.balance),
                               key: ValueKey<bool>(_isObscured),
                               style: TextStyle(
                                 fontSize: 40,
                                 fontWeight: FontWeight.w800,
                                 color: _isObscured ? AppColors.greyText : AppColors.primaryDark,
                                 height: 1.1,
-                                letterSpacing: -1.0,
+                                letterSpacing: _isObscured ? 1.0 : -1.0, // Spasi ekstra untuk titik-titik
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      AnimatedOpacity(
+                      
+                      // REFINED: Affordance dua arah (Hide & Reveal) dengan cross-fade
+                      AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        opacity: _isObscured ? 1.0 : 0.0,
+                        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
                         child: Row(
+                          key: ValueKey<bool>(_isObscured),
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.visibility_off_rounded,
+                              _isObscured ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                               size: 14,
                               color: AppColors.accentGreen,
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              "Tap to reveal",
-                              style: TextStyle(
+                              _isObscured ? "Tap to reveal" : "Tap to hide",
+                              style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 color: AppColors.greyText,
@@ -220,47 +233,60 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
 
 class _AuraRingPainter extends CustomPainter {
   final double rotation;
-  _AuraRingPainter({required this.rotation});
+  final double entranceProgress;
+  
+  _AuraRingPainter({required this.rotation, required this.entranceProgress});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius - 16);
 
     final trackPaint = Paint()
-      ..color = AppColors.greyText.withOpacity(0.05)
+      ..color = AppColors.greyText.withValues(alpha: 0.05)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawCircle(center, radius - 16, trackPaint);
 
+    if (entranceProgress <= 0.0) return;
+
+    final sweepAngle = entranceProgress * 2 * math.pi;
+    final startAngle = rotation - (math.pi / 2);
+    final gradientRotation = startAngle + sweepAngle - math.pi;
+
+    // REFINED: Warna yang lebih transparan dan titik henti (stops) yang lebih lebar
     final auraPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0
+      ..strokeWidth = 4.0 // Lebih tipis agar tidak terlihat kasar
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
           Colors.transparent,
-          AppColors.accentGreen.withOpacity(0.5),
-          AppColors.accentGreen,
+          AppColors.accentGreen.withValues(alpha: 0.1),
+          AppColors.accentGreen.withValues(alpha: 0.40), // Puncak glow diredupkan untuk elegansi
+          AppColors.accentGreen.withValues(alpha: 0.1),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.4, 0.5, 0.9],
-        transform: GradientRotation(rotation),
-      ).createShader(Rect.fromCircle(center: center, radius: radius - 16));
+        stops: const [0.0, 0.25, 0.5, 0.75, 1.0], // Transisi yang sangat landai
+        transform: GradientRotation(gradientRotation),
+      ).createShader(rect);
 
+    // REFINED: Radius blur dilebarkan secara masif untuk menciptakan "Ambient Light"
     final glowPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8.0
+      ..strokeWidth = 16.0 
       ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6.0)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16.0) 
       ..shader = auraPaint.shader;
 
-    canvas.drawCircle(center, radius - 16, glowPaint);
-    canvas.drawCircle(center, radius - 16, auraPaint);
+    canvas.drawArc(rect, startAngle, sweepAngle, false, glowPaint);
+    canvas.drawArc(rect, startAngle, sweepAngle, false, auraPaint);
   }
 
   @override
   bool shouldRepaint(covariant _AuraRingPainter oldDelegate) {
-    return oldDelegate.rotation != rotation;
+    return oldDelegate.rotation != rotation || 
+           oldDelegate.entranceProgress != entranceProgress;
   }
 }

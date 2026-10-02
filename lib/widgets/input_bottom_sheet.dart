@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import '../theme/app_colors.dart';
@@ -6,7 +7,7 @@ import '../providers/database_provider.dart';
 import '../models/expense.dart';
 
 class InputBottomSheet extends ConsumerStatefulWidget {
-  final Expense? expenseToEdit; // Jika null = Buat Baru, Jika ada = Mode Edit
+  final Expense? expenseToEdit; 
   
   const InputBottomSheet({super.key, this.expenseToEdit});
 
@@ -16,17 +17,22 @@ class InputBottomSheet extends ConsumerStatefulWidget {
 
 class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
   late bool isExpenseTab;
+  bool _isSuccess = false;
 
   final _nameController = TextEditingController();
   final _qtyController = TextEditingController();
   final _priceController = TextEditingController();
   final _balanceController = TextEditingController();
 
+  final _nameFocus = FocusNode();
+  final _qtyFocus = FocusNode();
+  final _priceFocus = FocusNode();
+  final _balanceFocus = FocusNode();
+
   @override
   void initState() {
     super.initState();
-    // Pre-fill form jika dalam Mode Edit
-    isExpenseTab = true; // Default tab
+    isExpenseTab = true; 
 
     if (widget.expenseToEdit != null) {
       _nameController.text = widget.expenseToEdit!.name;
@@ -36,19 +42,35 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
       _qtyController.text = "1";
     }
 
-    // Ambil saldo saat ini untuk di-prefill di Tab Saldo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentBal = ref.read(currentMonthBalanceProvider).value?.balance;
       if (currentBal != null) {
         _balanceController.text = currentBal.toStringAsFixed(0);
       }
     });
+
+    _setupFocusHaptics([_nameFocus, _qtyFocus, _priceFocus, _balanceFocus]);
   }
 
-  void _toggleTab(bool toExpense) => setState(() => isExpenseTab = toExpense);
+  void _setupFocusHaptics(List<FocusNode> nodes) {
+    for (var node in nodes) {
+      node.addListener(() {
+        if (node.hasFocus) HapticFeedback.selectionClick();
+      });
+    }
+  }
 
-  void _submitData() async {
+  void _toggleTab(bool toExpense) {
+    if (isExpenseTab == toExpense) return;
+    HapticFeedback.lightImpact();
+    setState(() => isExpenseTab = toExpense);
+  }
+
+  Future<void> _submitData() async {
+    if (_isSuccess) return;
+
     final dbService = ref.read(databaseServiceProvider);
+    bool isValid = false;
     
     if (isExpenseTab) {
       final name = _nameController.text.trim();
@@ -56,7 +78,6 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
       final price = double.tryParse(_priceController.text) ?? 0.0;
       
       if (name.isNotEmpty && price > 0) {
-        // Logika Senior: Preservasi ID dan Tanggal jika Edit
         final expense = Expense()
           ..id = widget.expenseToEdit?.id ?? Isar.autoIncrement
           ..name = name
@@ -66,7 +87,7 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
           ..date = widget.expenseToEdit?.date ?? DateTime.now();
 
         await dbService.saveExpense(expense);
-        if (mounted) Navigator.pop(context);
+        isValid = true;
       }
     } else {
       final balance = double.tryParse(_balanceController.text) ?? 0.0;
@@ -74,8 +95,24 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
         final now = DateTime.now();
         final monthYear = "${now.month.toString().padLeft(2, '0')}-${now.year}";
         await dbService.setMonthlyBalance(monthYear, balance);
-        if (mounted) Navigator.pop(context);
+        isValid = true;
       }
+    }
+
+    if (isValid && mounted) {
+      HapticFeedback.heavyImpact(); 
+      FocusScope.of(context).unfocus(); 
+
+      setState(() {
+        _isSuccess = true;
+      });
+      
+      // Tahan sheet sesaat agar animasi (400ms) selesai dan terlihat jelas
+      await Future.delayed(const Duration(milliseconds: 600));
+      
+      if (mounted) Navigator.pop(context);
+    } else {
+      HapticFeedback.vibrate(); 
     }
   }
 
@@ -85,6 +122,12 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
     _qtyController.dispose();
     _priceController.dispose();
     _balanceController.dispose();
+    
+    _nameFocus.dispose();
+    _qtyFocus.dispose();
+    _priceFocus.dispose();
+    _balanceFocus.dispose();
+    
     super.dispose();
   }
 
@@ -108,12 +151,11 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
             Center(
               child: Container(
                 width: 48, height: 5,
-                decoration: BoxDecoration(color: AppColors.greyText.withOpacity(0.3), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppColors.greyText.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10)),
               ),
             ),
             const SizedBox(height: 24),
             
-            // Sembunyikan toggle jika sedang dalam mode Edit Pengeluaran (Fokus)
             if (!isEditMode)
               Container(
                 padding: const EdgeInsets.all(4),
@@ -123,7 +165,10 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _toggleTab(true),
-                        child: Container(
+                        behavior: HitTestBehavior.opaque,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: isExpenseTab ? AppColors.primaryDark : Colors.transparent,
@@ -138,7 +183,10 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _toggleTab(false),
-                        child: Container(
+                        behavior: HitTestBehavior.opaque,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: !isExpenseTab ? AppColors.primaryDark : Colors.transparent,
@@ -157,7 +205,23 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                const Center(child: Text("Edit Transaksi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primaryDark))),
             
             const SizedBox(height: 32),
-            isExpenseTab ? _buildExpenseForm() : _buildBalanceForm(),
+            
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0.02, 0.0), end: Offset.zero).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: isExpenseTab ? _buildExpenseForm(key: const ValueKey("expense")) : _buildBalanceForm(key: const ValueKey("balance")),
+            ),
+            
             const SizedBox(height: 32),
 
             SizedBox(
@@ -166,12 +230,31 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
               child: ElevatedButton(
                 onPressed: _submitData,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
+                  backgroundColor: _isSuccess ? AppColors.accentGreen : AppColors.primaryDark,
                   foregroundColor: AppColors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   elevation: 0,
+                  animationDuration: const Duration(milliseconds: 300),
                 ),
-                child: Text(isEditMode ? "Perbarui Data" : "Simpan Data", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                // Efisiensi: Manfaatkan AnimatedSwitcher bawaan dengan kurva Elastic Out
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400), // Durasi sedikit dinaikkan agar efek elastic lebih terasa
+                  switchInCurve: Curves.elasticOut,
+                  switchOutCurve: Curves.easeInBack, // Teks menghilang sedikit ditarik ke belakang
+                  transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                  child: _isSuccess
+                      ? const Icon(
+                          Icons.check_circle_rounded, 
+                          key: ValueKey("success"), 
+                          size: 28, 
+                          color: AppColors.white
+                        )
+                      : Text(
+                          key: const ValueKey("text"),
+                          isEditMode ? "Perbarui Data" : "Simpan Data", 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)
+                        ),
+                ),
               ),
             ),
           ],
@@ -180,37 +263,46 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
     );
   }
 
-  Widget _buildExpenseForm() {
+  Widget _buildExpenseForm({Key? key}) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTextField(label: "Nama Item", controller: _nameController, icon: Icons.shopping_bag_outlined),
+        _buildTextField(label: "Nama Item", controller: _nameController, focusNode: _nameFocus, icon: Icons.shopping_bag_outlined),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(flex: 1, child: _buildTextField(label: "Qty", controller: _qtyController, icon: Icons.numbers_rounded, isNumber: true)),
+            Expanded(flex: 1, child: _buildTextField(label: "Qty", controller: _qtyController, focusNode: _qtyFocus, icon: Icons.numbers_rounded, isNumber: true)),
             const SizedBox(width: 16),
-            Expanded(flex: 2, child: _buildTextField(label: "Harga Satuan (Rp)", controller: _priceController, icon: Icons.attach_money_rounded, isNumber: true)),
+            Expanded(flex: 2, child: _buildTextField(label: "Harga Satuan (Rp)", controller: _priceController, focusNode: _priceFocus, icon: Icons.attach_money_rounded, isNumber: true)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildBalanceForm() {
+  Widget _buildBalanceForm({Key? key}) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("Saldo Utama Bulan Ini", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
         const SizedBox(height: 8),
-        _buildTextField(label: "Total Saldo (Rp)", controller: _balanceController, icon: Icons.account_balance_wallet_outlined, isNumber: true),
+        _buildTextField(label: "Total Saldo (Rp)", controller: _balanceController, focusNode: _balanceFocus, icon: Icons.account_balance_wallet_outlined, isNumber: true),
       ],
     );
   }
 
-  Widget _buildTextField({required String label, required TextEditingController controller, required IconData icon, bool isNumber = false}) {
+  Widget _buildTextField({
+    required String label, 
+    required TextEditingController controller, 
+    required FocusNode focusNode,
+    required IconData icon, 
+    bool isNumber = false
+  }) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primaryDark),
       decoration: InputDecoration(

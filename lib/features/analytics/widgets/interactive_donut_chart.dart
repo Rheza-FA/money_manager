@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:money_manager/l10n/app_localizations.dart';
 import '../models/analytics_models.dart';
 
 class InteractiveDonutChart extends StatelessWidget {
@@ -16,49 +17,46 @@ class InteractiveDonutChart extends StatelessWidget {
     required this.onSliceSelected,
   });
 
-  static const double _chartSize = 224.0;
-  static const double _baseStrokeWidth = 26.0;
-  static const double _selectedStrokeWidth = 34.0;
+  static const double _pedestalSize = 264.0;
+  static const double _ringSize = 228.0;
+  static const double _baseStroke = 22.0;
+  static const double _activeStroke = 30.0;
 
   void _handleTapUp(TapUpDetails details) {
     if (slices.isEmpty || totalSpent <= 0) return;
 
-    const Offset center = Offset(_chartSize / 2, _chartSize / 2);
+    const Offset center = Offset(_pedestalSize / 2, _pedestalSize / 2);
     final Offset touchOffset = details.localPosition - center;
     final double distance = touchOffset.distance;
 
-    const double outerRadius = (_chartSize / 2) - (_selectedStrokeWidth / 2) + 14;
-    const double innerRadius = outerRadius - _selectedStrokeWidth - 18;
+    const double outerRadius = (_ringSize / 2) + 12;
+    const double innerRadius = (_ringSize / 2) - _activeStroke - 16;
 
     if (distance < innerRadius || distance > outerRadius) {
       onSliceSelected(null);
       return;
     }
 
-    double touchAngle =
-        math.atan2(touchOffset.dy, touchOffset.dx) + (math.pi / 2);
-    if (touchAngle < 0) {
-      touchAngle += 2 * math.pi;
+    double angle = math.atan2(touchOffset.dy, touchOffset.dx) + (math.pi / 2);
+    if (angle < 0) {
+      angle += 2 * math.pi;
     }
 
-    double currentStartAngle = 0.0;
+    double startAngle = 0.0;
     for (final AllocationSlice slice in slices) {
-      final double sweepAngle = (slice.amount / totalSpent) * 2 * math.pi;
-      if (touchAngle >= currentStartAngle &&
-          touchAngle <= currentStartAngle + sweepAngle) {
-        if (selectedSliceId == slice.id) {
-          onSliceSelected(null);
-        } else {
-          onSliceSelected(slice.id);
-        }
+      final double sweep = (slice.amount / totalSpent) * 2 * math.pi;
+      if (angle >= startAngle && angle <= startAngle + sweep) {
+        onSliceSelected(selectedSliceId == slice.id ? null : slice.id);
         return;
       }
-      currentStartAngle += sweepAngle;
+      startAngle += sweep;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
+
     AllocationSlice? activeSlice;
     if (selectedSliceId != null) {
       for (final AllocationSlice s in slices) {
@@ -70,130 +68,141 @@ class InteractiveDonutChart extends StatelessWidget {
     }
 
     final bool hasData = slices.isNotEmpty && totalSpent > 0;
-    final String centerLabel =
-        activeSlice?.title ?? (hasData ? 'Total Porsi' : 'Belum Ada Data');
-    final double centerAmount = activeSlice?.amount ?? totalSpent;
-    final String centerBadgeText = activeSlice != null && totalSpent > 0
-        ? (((activeSlice.amount / totalSpent) * 100).toStringAsFixed(1) +
-            '% • ' +
-            activeSlice.totalQuantity.toString() +
-            'x')
-        : (hasData ? (slices.length.toString() + ' Pos Pengeluaran') : 'Rp 0');
+    final String topLabel = activeSlice != null
+        ? activeSlice.title.toUpperCase()
+        : l10n.analyticsTotalSpent;
+    final double displayAmount = activeSlice?.amount ?? totalSpent;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapUp: _handleTapUp,
-      child: SizedBox(
-        width: _chartSize,
-        height: _chartSize,
-        child: TweenAnimationBuilder< double >(
-          tween: Tween< double >(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOutCubic,
-          builder: (BuildContext context, double progress, Widget? child) {
-            return CustomPaint(
-              painter: _ForestDonutPainter(
-                slices: slices,
-                total: totalSpent,
-                selectedSliceId: selectedSliceId,
-                animationProgress: progress,
-                baseStrokeWidth: _baseStrokeWidth,
-                selectedStrokeWidth: _selectedStrokeWidth,
+    String pillText;
+    if (activeSlice != null && totalSpent > 0) {
+      final String pct =
+          ((activeSlice.amount / totalSpent) * 100).toStringAsFixed(1);
+      pillText = pct + '% • ' + activeSlice.totalQuantity.toString() + 'x';
+    } else if (hasData) {
+      pillText = slices.length == 1
+          ? l10n.analyticsSingleSource
+          : l10n.analyticsMultipleSources(slices.length.toString());
+    } else {
+      pillText = l10n.analyticsNoActivity;
+    }
+
+    return Center(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: _handleTapUp,
+        child: Container(
+          width: _pedestalSize,
+          height: _pedestalSize,
+          decoration: BoxDecoration(
+            color: ForestTokens.pureWhite,
+            shape: BoxShape.circle,
+            boxShadow: < BoxShadow >[
+              BoxShadow(
+                color: ForestTokens.primaryForest.withValues(alpha: 0.06),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
               ),
-              child: child,
-            );
-          },
-          child: Center(
-            child: Container(
-              width: _chartSize - (_selectedStrokeWidth * 2) - 22,
-              height: _chartSize - (_selectedStrokeWidth * 2) - 22,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: < BoxShadow >[
-                  BoxShadow(
-                    color: ForestAnalyticsPalette.deepForest
-                        .withValues(alpha: 0.05),
-                    blurRadius: 16,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Column(
-                  key: ValueKey< String >(activeSlice?.id ?? 'all_total'),
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: < Widget >[
-                    Text(
-                      centerLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: ForestAnalyticsPalette.bodyGreyText,
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: < Widget >[
+              SizedBox(
+                width: _ringSize,
+                height: _ringSize,
+                child: TweenAnimationBuilder< double >(
+                  tween: Tween< double >(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 650),
+                  curve: Curves.easeOutCubic,
+                  builder: (BuildContext context, double progress, _) {
+                    return CustomPaint(
+                      painter: _RingAllocationPainter(
+                        slices: slices,
+                        total: totalSpent,
+                        selectedSliceId: selectedSliceId,
+                        progress: progress,
+                        baseStroke: _baseStroke,
+                        activeStroke: _activeStroke,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: < Widget >[
-                          const Text(
-                            'Rp ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: ForestAnalyticsPalette.bodyGreyText,
-                            ),
-                          ),
-                          Text(
-                            IdrFormatter.numberOnly(centerAmount),
-                            style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w800,
-                              color: ForestAnalyticsPalette.deepForest,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: activeSlice != null
-                            ? activeSlice.color.withValues(alpha: 0.14)
-                            : ForestAnalyticsPalette.iconBoxMint,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        centerBadgeText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: activeSlice?.color ??
-                              ForestAnalyticsPalette.deepForest,
-                        ),
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 42),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Column(
+                    key: ValueKey< String >(activeSlice?.id ?? 'summary_center'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: < Widget >[
+                      Text(
+                        topLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                          color: ForestTokens.greyText,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: < Widget >[
+                            const Text(
+                              'Rp ',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: ForestTokens.greyText,
+                              ),
+                            ),
+                            Text(
+                              IdrFormatter.numberOnly(displayAmount),
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: ForestTokens.primaryForest,
+                                letterSpacing: -0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: activeSlice != null
+                              ? activeSlice.color.withValues(alpha: 0.14)
+                              : ForestTokens.canvasMint,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          pillText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: activeSlice?.color ??
+                                ForestTokens.primaryForest,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -201,61 +210,62 @@ class InteractiveDonutChart extends StatelessWidget {
   }
 }
 
-class _ForestDonutPainter extends CustomPainter {
+class _RingAllocationPainter extends CustomPainter {
   final List< AllocationSlice > slices;
   final double total;
   final String? selectedSliceId;
-  final double animationProgress;
-  final double baseStrokeWidth;
-  final double selectedStrokeWidth;
+  final double progress;
+  final double baseStroke;
+  final double activeStroke;
 
-  _ForestDonutPainter({
+  _RingAllocationPainter({
     required this.slices,
     required this.total,
     required this.selectedSliceId,
-    required this.animationProgress,
-    required this.baseStrokeWidth,
-    required this.selectedStrokeWidth,
+    required this.progress,
+    required this.baseStroke,
+    required this.activeStroke,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final Offset center = Offset(size.width / 2, size.height / 2);
-    final double radius = (size.width / 2) - (selectedStrokeWidth / 2) - 4;
+    final double radius = (size.width / 2) - (activeStroke / 2);
 
     final Paint trackPaint = Paint()
-      ..color = ForestAnalyticsPalette.scaffoldMint
+      ..color = ForestTokens.canvasMint
       ..style = PaintingStyle.stroke
-      ..strokeWidth = baseStrokeWidth;
+      ..strokeWidth = baseStroke;
     canvas.drawCircle(center, radius, trackPaint);
 
     if (slices.isEmpty || total <= 0) return;
 
-    final double gapRadians = slices.length > 1 ? 0.04 : 0.0;
+    final double gap = slices.length > 1 ? 0.038 : 0.0;
     double startAngle = -math.pi / 2;
-    final double maxSweep = 2 * math.pi * animationProgress;
+    final double maxSweep = 2 * math.pi * progress;
 
     for (final AllocationSlice slice in slices) {
       final double rawSweep = (slice.amount / total) * maxSweep;
-      final double effectiveSweep = math.max(0.0, rawSweep - gapRadians);
+      final double effectiveSweep = math.max(0.0, rawSweep - gap);
       final bool isSelected = selectedSliceId == slice.id;
       final bool isDimmed = selectedSliceId != null && !isSelected;
 
-      final Paint paint = Paint()
+      final Paint segmentPaint = Paint()
         ..color =
-            isDimmed ? slice.color.withValues(alpha: 0.25) : slice.color
+            isDimmed ? slice.color.withValues(alpha: 0.22) : slice.color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = isSelected ? selectedStrokeWidth : baseStrokeWidth
+        ..strokeWidth = isSelected ? activeStroke : baseStroke
         ..strokeCap = slices.length == 1 ? StrokeCap.round : StrokeCap.butt;
 
-      final double activeRadius = isSelected ? radius + 3.0 : radius;
-
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: activeRadius),
-        startAngle + (gapRadians / 2),
+        Rect.fromCircle(
+          center: center,
+          radius: isSelected ? radius + 2.0 : radius,
+        ),
+        startAngle + (gap / 2),
         effectiveSweep,
         false,
-        paint,
+        segmentPaint,
       );
 
       startAngle += rawSweep;
@@ -263,9 +273,9 @@ class _ForestDonutPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ForestDonutPainter oldDelegate) {
+  bool shouldRepaint(covariant _RingAllocationPainter oldDelegate) {
     return oldDelegate.selectedSliceId != selectedSliceId ||
-        oldDelegate.animationProgress != animationProgress ||
+        oldDelegate.progress != progress ||
         oldDelegate.total != total ||
         oldDelegate.slices != slices;
   }

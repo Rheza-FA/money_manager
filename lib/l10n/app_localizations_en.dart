@@ -185,4 +185,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String analyticsWeekShort(String number) {
     return 'W$number';
   }
+
+  @override
+  String analyticsPercentOfLimit(String percent) {
+    return '$percent% of spending limit';
+  }
+
+  @override
+  String analyticsLimitBenchmark(String amount) {
+    return 'Limit $amount';
+  }
+
+  @override
+  String analyticsPercentOfTotal(String percent) {
+    return '$percent% of total spent';
+  }
 }

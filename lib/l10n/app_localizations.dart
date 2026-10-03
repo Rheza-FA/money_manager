@@ -417,6 +417,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'W{number}'**
   String analyticsWeekShort(String number);
+
+  /// Label showing percentage of spending limit used by an item or category
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of spending limit'**
+  String analyticsPercentOfLimit(String percent);
+
+  /// Label showing the active spending limit benchmark on the card
+  ///
+  /// In en, this message translates to:
+  /// **'Limit {amount}'**
+  String analyticsLimitBenchmark(String amount);
+
+  /// Fallback label when spending limit is not set
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of total spent'**
+  String analyticsPercentOfTotal(String percent);
 }
 
 class _AppLocalizationsDelegate

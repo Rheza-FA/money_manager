@@ -1,14 +1,17 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:money_manager/l10n/app_localizations.dart';
+import 'package:money_manager/theme/app_colors.dart';
 import '../models/analytics_models.dart';
 
 class ForestPaceHeroCard extends StatefulWidget {
   final AnalyticsSnapshot snapshot;
+  final VoidCallback? onToggleSpendingMode;
 
   const ForestPaceHeroCard({
     super.key,
     required this.snapshot,
+    this.onToggleSpendingMode,
   });
 
   @override
@@ -70,60 +73,35 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
         );
       }
     } else {
-      statusLine = l10n.analyticsAvgPerDay(
-        IdrFormatter.format(widget.snapshot.averageDailySpent),
-      );
+      statusLine = widget.snapshot.isBiWeeklyMode
+          ? l10n.safeBudgetBiWeekly
+          : l10n.safeBudgetMonthly;
     }
 
-    final double? delta = widget.snapshot.deltaPercentage;
-    String pillLabel;
-    IconData pillIcon;
-    if (delta != null) {
-      final String sign = delta > 0 ? '+' : '';
-      pillLabel = l10n.analyticsVsPrev(sign + delta.toStringAsFixed(0));
-      pillIcon = delta <= 0
-          ? Icons.trending_down_rounded
-          : Icons.trending_up_rounded;
-    } else {
-      pillLabel = widget.snapshot.isBiWeeklyMode
-          ? l10n.analyticsBiWeekly
-          : l10n.analyticsFullMonth;
-      pillIcon = Icons.calendar_today_outlined;
-    }
+    final String cycleLabel =
+        widget.snapshot.isBiWeeklyMode ? l10n.fourteenDays : l10n.fullMonth;
 
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: ForestTokens.primaryForest,
+        color: AppColors.primaryDark,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: < BoxShadow >[
-          BoxShadow(
-            color: ForestTokens.primaryForest.withValues(alpha: 0.18),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: AppColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: < Widget >[
+          // Baris Atas: Ikon + Label Abu-abu Sage + Tombol Cycle Mode Identik DailyLimitCard
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: < Widget >[
               Row(
                 children: < Widget >[
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: const BoxDecoration(
-                      color: ForestTokens.mintAccent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.insights_rounded,
-                      size: 14,
-                      color: ForestTokens.primaryForest,
-                    ),
+                  const Icon(
+                    Icons.monetization_on,
+                    size: 20,
+                    color: ForestTokens.mintAccent,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -134,48 +112,54 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                         : l10n.analyticsSpendingPace,
                     style: const TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.4,
-                      color: ForestTokens.mintAccent,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.5,
+                      color: AppColors.greyText,
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.16),
+              GestureDetector(
+                onTap: widget.onToggleSpendingMode,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: < Widget >[
-                    Icon(
-                      pillIcon,
-                      size: 14,
-                      color: ForestTokens.mintAccent,
+                  decoration: BoxDecoration(
+                    color: AppColors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.white.withValues(alpha: 0.12),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      pillLabel,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: < Widget >[
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 14,
+                        color: AppColors.greyText,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        cycleLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
+
+          // Baris Nominal Utama: "Rp" Regular GreyText + Angka Bold Putih
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -186,35 +170,38 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                 const Text(
                   'Rp ',
                   style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w500,
-                    color: ForestTokens.mutedSage,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.greyText,
                   ),
                 ),
                 Text(
                   IdrFormatter.numberOnly(headlineAmount),
                   style: const TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.8,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.white,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+
+          // Sub-teks Regular GreyText
           Text(
             statusLine,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: ForestTokens.mutedSage,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: AppColors.greyText,
             ),
           ),
           const SizedBox(height: 22),
+
+          // Grafik Batang Interaktif
           if (series.isNotEmpty) _buildInteractiveBars(series, benchmark),
         ],
       ),
@@ -230,7 +217,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
     final double ceiling = maxVal * 1.15;
 
     return SizedBox(
-      height: 118,
+      height: 112,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           const double labelRowHeight = 24.0;
@@ -250,7 +237,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                   child: CustomPaint(
                     size: Size(constraints.maxWidth, 1.5),
                     painter: _LimitDashedLinePainter(
-                      color: ForestTokens.mintAccent.withValues(alpha: 0.45),
+                      color: ForestTokens.mintAccent.withValues(alpha: 0.40),
                     ),
                   ),
                 ),
@@ -260,19 +247,19 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                   final PaceBarPoint pt = series[idx];
                   final bool isSelected = idx == _selectedIndex;
                   final double heightFactor = pt.spent > 0
-                      ? (pt.spent / ceiling).clamp(0.1, 1.0)
+                      ? (pt.spent / ceiling).clamp(0.10, 1.0)
                       : 0.06;
 
                   Color barFill;
                   if (pt.spent <= 0) {
-                    barFill = Colors.white.withValues(alpha: 0.10);
+                    barFill = AppColors.white.withValues(alpha: 0.08);
                   } else if (pt.isOverLimit) {
                     barFill = isSelected
                         ? ForestTokens.coralAlert
                         : ForestTokens.coralAlert.withValues(alpha: 0.55);
                   } else {
                     barFill = isSelected
-                        ? Colors.white
+                        ? AppColors.white
                         : ForestTokens.mintAccent.withValues(alpha: 0.55);
                   }
 
@@ -288,9 +275,9 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                             child: Align(
                               alignment: Alignment.bottomCenter,
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 260),
+                                duration: const Duration(milliseconds: 240),
                                 curve: Curves.easeOutCubic,
-                                width: isSelected ? 24 : 18,
+                                width: isSelected ? 22 : 18,
                                 height: barZoneHeight * heightFactor,
                                 decoration: BoxDecoration(
                                   color: barFill,
@@ -308,11 +295,11 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isSelected
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
                                 color: isSelected
-                                    ? Colors.white
-                                    : ForestTokens.mutedSage,
+                                    ? AppColors.white
+                                    : AppColors.greyText,
                               ),
                             ),
                           ),

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+// [INJEKSI LOKALISASI]
+import '../l10n/app_localizations.dart';
+
 import '../theme/app_colors.dart';
 import '../providers/database_provider.dart';
 
@@ -50,7 +53,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
   bool _isZeroExpenseToday() {
     final expensesAsync = ref.watch(expenseListProvider);
     if (!expensesAsync.hasValue) return true; 
-    
+
     final expenses = expensesAsync.value!;
     if (expenses.isEmpty) return true;
 
@@ -59,12 +62,15 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
         e.date.year == now.year &&
         e.date.month == now.month &&
         e.date.day == now.day);
-        
+
     return !hasExpenseToday;
   }
 
   @override
   Widget build(BuildContext context) {
+    // [BEST PRACTICE: Cache kamus]
+    final l10n = AppLocalizations.of(context)!;
+    
     final formattedAmount = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(widget.maxDaily);
     final isBiWeekly = ref.watch(appSettingsProvider).value?.isBiWeeklyMode ?? false;
     final isZero = _isZeroExpenseToday(); 
@@ -75,10 +81,8 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
         animation: _scrollPosition ?? const AlwaysStoppedAnimation(0.0),
         builder: (context, child) {
           final offset = _scrollPosition?.pixels ?? 0.0;
-          // REFINED PARALLAX: Diturunkan ke 0.10. Terasanya lebih elegan, berat, dan subtle.
-          // Batas pergerakan dikurangi menjadi 15px agar tidak over-animating.
           final translateY = (offset * 0.10).clamp(-15.0, 15.0);
-          
+
           return Transform.translate(
             offset: Offset(0, translateY),
             child: child,
@@ -99,7 +103,8 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
             borderRadius: BorderRadius.circular(32),
             child: Stack(
               children: [
-                _buildCardContent(formattedAmount, isBiWeekly),
+                // Pass parameter l10n ke dalam fungsi build konten
+                _buildCardContent(formattedAmount, isBiWeekly, l10n),
 
                 if (isZero)
                   Positioned.fill(
@@ -117,7 +122,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                             gradient: LinearGradient(
                               colors: [
                                 Colors.transparent,
-                                AppColors.white.withValues(alpha: 0.15), // Disesuaikan agar tidak menyilaukan
+                                AppColors.white.withValues(alpha: 0.15), 
                                 Colors.transparent,
                               ],
                               stops: const [0.3, 0.5, 0.7],
@@ -137,7 +142,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
     );
   }
 
-  Widget _buildCardContent(String formattedAmount, bool isBiWeekly) {
+  Widget _buildCardContent(String formattedAmount, bool isBiWeekly, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(28),
       color: AppColors.primaryDark,
@@ -154,9 +159,8 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                   const Icon(Icons.monetization_on_rounded, color: AppColors.accentGreen, size: 16),
                   const SizedBox(width: 8),
                   Text(
-                    "DAILY LIMIT",
+                    l10n.dailyLimit, // [INJEKSI LOKALISASI]
                     style: TextStyle(
-                      // READABILITY FIX: Menggunakan putih transparan tajam alih-alih warna gelap
                       color: AppColors.white.withValues(alpha: 0.9), 
                       fontWeight: FontWeight.w700,
                       fontSize: 11,
@@ -165,7 +169,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                   ),
                 ],
               ),
-              
+
               GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact(); 
@@ -175,7 +179,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.08), // Dinaikkan sedikit agar shape terlihat
+                    color: AppColors.white.withValues(alpha: 0.08), 
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: AppColors.white.withValues(alpha: 0.15),
@@ -192,7 +196,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        isBiWeekly ? "14 Days" : "Full Month",
+                        isBiWeekly ? l10n.fourteenDays : l10n.fullMonth, // [INJEKSI LOKALISASI]
                         style: TextStyle(
                           color: AppColors.white.withValues(alpha: 0.9),
                           fontSize: 11,
@@ -205,12 +209,11 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
               ),
             ],
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           RichText(
             text: TextSpan(
-              // Menghapus hardcode fontFamily agar bisa beradaptasi dengan font global baru
               style: const TextStyle(), 
               children: [
                 TextSpan(
@@ -218,7 +221,6 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    // READABILITY FIX: Opacity dinaikkan agar lebih kontras dengan background gelap
                     color: AppColors.white.withValues(alpha: 0.7), 
                   ),
                 ),
@@ -227,7 +229,7 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
                   style: const TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.white, // Pure white untuk hierarki visual terpenting
+                    color: AppColors.white, 
                     letterSpacing: -1.0,
                     height: 1.1,
                   ),
@@ -237,15 +239,14 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard> with SingleTick
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
-            isBiWeekly ? "Safe budget for today based on current cycle" : "Safe budget for today based on full month",
+            isBiWeekly ? l10n.safeBudgetBiWeekly : l10n.safeBudgetMonthly, // [INJEKSI LOKALISASI]
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              // READABILITY FIX: Opacity dinaikkan tajam agar teks instruksi/bantuan mudah dibaca
               color: AppColors.white.withValues(alpha: 0.7), 
             ),
           ),

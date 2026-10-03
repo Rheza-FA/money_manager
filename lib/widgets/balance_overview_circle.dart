@@ -2,6 +2,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+// [INJEKSI LOKALISASI]
+import '../l10n/app_localizations.dart';
+
 import '../theme/app_colors.dart';
 
 class BalanceOverviewCircle extends StatefulWidget {
@@ -17,22 +20,21 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
   late final AnimationController _spinController;
   late final AnimationController _entranceController;
   late final AnimationController _scaleController;
-  
+
   late final NumberFormat _formatNumber;
-  
+
   bool _isObscured = false; 
 
   @override
   void initState() {
     super.initState();
-    
+
     _formatNumber = NumberFormat.currency(
       locale: 'id_ID',
       symbol: '',
       decimalDigits: 0,
     );
-    
-    // REFINED: Rotasi diperlambat ekstrem ke 24 detik untuk kesan "calm & premium"
+
     _spinController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 24),
@@ -40,7 +42,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
 
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400), // Sedikit diperlambat untuk keanggunan
+      duration: const Duration(milliseconds: 1400), 
     );
 
     _scaleController = AnimationController(
@@ -73,7 +75,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
   void _onTapUp(TapUpDetails details) {
     HapticFeedback.mediumImpact(); 
     _scaleController.animateTo(1.0, duration: const Duration(milliseconds: 600), curve: Curves.elasticOut);
-    
+
     setState(() {
       _isObscured = !_isObscured;
     });
@@ -85,6 +87,9 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
 
   @override
   Widget build(BuildContext context) {
+    // [BEST PRACTICE: Cache kamus]
+    final l10n = AppLocalizations.of(context)!;
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: AspectRatio(
@@ -98,7 +103,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
             scale: _scaleController, 
             child: Stack(
               children: [
-                // 1. Lapangan Belakang: Container Putih Solid & Bayangan
+                // 1. Lapangan Belakang
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
@@ -114,7 +119,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                   ),
                 ),
 
-                // 2. Lapisan Tengah: CustomPaint untuk Aura Ambient Cahaya
+                // 2. Lapisan Tengah (Aura)
                 Positioned.fill(
                   child: AnimatedBuilder(
                     animation: Listenable.merge([_spinController, _entranceController]),
@@ -129,13 +134,13 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                   ),
                 ),
 
-                // 3. Lapisan Depan: Konten Teks & Informasi Balance
+                // 3. Lapisan Depan (Teks)
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "TOTAL BALANCE",
+                        l10n.totalBalance, // [INJEKSI LOKALISASI]
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -162,8 +167,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                             ),
                           ),
                           const SizedBox(width: 4),
-                          
-                          // REFINED: Animasi "Vault Lock" (Scale + Fade, No Bouncing)
+
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 400),
                             switchInCurve: Curves.easeOutQuart,
@@ -172,7 +176,6 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                               return FadeTransition(
                                 opacity: animation,
                                 child: ScaleTransition(
-                                  // Skala mikro (96% ke 100%) untuk ilusi kedalaman tanpa mendisrupsi layout
                                   scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
                                   child: child,
                                 ),
@@ -186,15 +189,14 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                                 fontWeight: FontWeight.w800,
                                 color: _isObscured ? AppColors.greyText : AppColors.primaryDark,
                                 height: 1.1,
-                                letterSpacing: _isObscured ? 1.0 : -1.0, // Spasi ekstra untuk titik-titik
+                                letterSpacing: _isObscured ? 1.0 : -1.0, 
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
-                      // REFINED: Affordance dua arah (Hide & Reveal) dengan cross-fade
+
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
@@ -209,7 +211,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              _isObscured ? "Tap to reveal" : "Tap to hide",
+                              _isObscured ? l10n.tapToReveal : l10n.tapToHide, // [INJEKSI LOKALISASI]
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
@@ -234,7 +236,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
 class _AuraRingPainter extends CustomPainter {
   final double rotation;
   final double entranceProgress;
-  
+
   _AuraRingPainter({required this.rotation, required this.entranceProgress});
 
   @override
@@ -255,24 +257,22 @@ class _AuraRingPainter extends CustomPainter {
     final startAngle = rotation - (math.pi / 2);
     final gradientRotation = startAngle + sweepAngle - math.pi;
 
-    // REFINED: Warna yang lebih transparan dan titik henti (stops) yang lebih lebar
     final auraPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0 // Lebih tipis agar tidak terlihat kasar
+      ..strokeWidth = 4.0 
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
           Colors.transparent,
           AppColors.accentGreen.withValues(alpha: 0.1),
-          AppColors.accentGreen.withValues(alpha: 0.40), // Puncak glow diredupkan untuk elegansi
+          AppColors.accentGreen.withValues(alpha: 0.40), 
           AppColors.accentGreen.withValues(alpha: 0.1),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.25, 0.5, 0.75, 1.0], // Transisi yang sangat landai
+        stops: const [0.0, 0.25, 0.5, 0.75, 1.0], 
         transform: GradientRotation(gradientRotation),
       ).createShader(rect);
 
-    // REFINED: Radius blur dilebarkan secara masif untuk menciptakan "Ambient Light"
     final glowPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 16.0 

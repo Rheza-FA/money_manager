@@ -63,7 +63,6 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
-    // Single Source of Truth yang sama persis dengan DashboardScreen
     final double maxDailySpending = ref.watch(maxDailySpendingProvider);
     final TimeFilter activeFilter = ref.watch(timeFilterProvider);
     final DateTime? customDate = ref.watch(customDateProvider);
@@ -100,7 +99,6 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
       backgroundColor: AppColors.backgroundTop,
       body: Stack(
         children: < Widget >[
-          // Latar Gradien Identik DashboardScreen
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -110,7 +108,6 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
               ),
             ),
           ),
-
           SafeArea(
             bottom: false,
             child: CustomScrollView(
@@ -148,7 +145,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
 
-                // 3. ForestPaceHeroCard (Sinkron dengan DailyLimitCard)
+                // 3. ForestPaceHeroCard (100% Identik DailyLimitCard)
                 SliverToBoxAdapter(
                   child: ForestPaceHeroCard(
                     snapshot: snapshot,
@@ -161,70 +158,16 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
 
-                // 4. Filter Row (100% Identik dengan DashboardScreen)
+                // 4. Filter Row yang rata sempurna dengan batas kiri & kanan kartu (horizontal: 24)
                 SliverToBoxAdapter(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: < Widget >[
-                        GestureDetector(
-                          onTap: _selectCustomDate,
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: activeFilter == TimeFilter.customDate
-                                  ? AppColors.primaryDark
-                                  : AppColors.white.withValues(alpha: 0.6),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: activeFilter == TimeFilter.customDate
-                                    ? Colors.transparent
-                                    : AppColors.white,
-                                width: 1.5,
-                              ),
-                              boxShadow: activeFilter == TimeFilter.customDate
-                                  ? AppColors.softShadow
-                                  : null,
-                            ),
-                            child: Icon(
-                              Icons.calendar_month_rounded,
-                              size: 18,
-                              color: activeFilter == TimeFilter.customDate
-                                  ? AppColors.white
-                                  : AppColors.primaryLight,
-                            ),
-                          ),
-                        ),
-                        _buildFilterChip(
-                          l10n.today,
-                          TimeFilter.daily,
-                          activeFilter,
-                        ),
-                        _buildFilterChip(
-                          l10n.thisMonth,
-                          TimeFilter.monthly,
-                          activeFilter,
-                        ),
-                        _buildFilterChip(
-                          l10n.sixMonths,
-                          TimeFilter.sixMonths,
-                          activeFilter,
-                        ),
-                        _buildFilterChip(
-                          l10n.thisYear,
-                          TimeFilter.yearly,
-                          activeFilter,
-                        ),
-                      ],
-                    ),
+                  child: _buildAlignedFilterBar(
+                    l10n: l10n,
+                    activeFilter: activeFilter,
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                // 5. Section Header (100% Identik dengan DashboardScreen)
+                // 5. Section Header
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -312,7 +255,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
             ),
           ),
 
-          // 7. Bottom Navigation Bar (100% Identik dengan DashboardScreen)
+          // 7. Bottom Navigation Bar
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -364,11 +307,104 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
     );
   }
 
-  Widget _buildFilterChip(
-    String label,
-    TimeFilter filter,
-    TimeFilter activeFilter,
-  ) {
+  Widget _buildAlignedFilterBar({
+    required AppLocalizations l10n,
+    required TimeFilter activeFilter,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          const double calendarSize = 40.0;
+          const double gap = 8.0;
+          final double availableForThreeChips =
+              constraints.maxWidth - calendarSize - (gap * 3);
+
+          final double todayWidth = availableForThreeChips * 0.27;
+          final double thisMonthWidth = availableForThreeChips * 0.38;
+          final double sixMonthsWidth = availableForThreeChips * 0.35;
+          final double thisYearWidth = availableForThreeChips * 0.35;
+
+          final bool isCustomDate = activeFilter == TimeFilter.customDate;
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: < Widget >[
+                  GestureDetector(
+                    onTap: _selectCustomDate,
+                    child: Container(
+                      width: calendarSize,
+                      height: calendarSize,
+                      decoration: BoxDecoration(
+                        color: isCustomDate
+                            ? AppColors.primaryDark
+                            : AppColors.white.withValues(alpha: 0.6),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isCustomDate
+                              ? Colors.transparent
+                              : AppColors.white,
+                          width: 1.5,
+                        ),
+                        boxShadow: isCustomDate ? AppColors.softShadow : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.calendar_month_rounded,
+                        size: 18,
+                        color: isCustomDate
+                            ? AppColors.white
+                            : AppColors.primaryLight,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    label: l10n.today,
+                    filter: TimeFilter.daily,
+                    activeFilter: activeFilter,
+                    width: todayWidth,
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    label: l10n.thisMonth,
+                    filter: TimeFilter.monthly,
+                    activeFilter: activeFilter,
+                    width: thisMonthWidth,
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    label: l10n.sixMonths,
+                    filter: TimeFilter.sixMonths,
+                    activeFilter: activeFilter,
+                    width: sixMonthsWidth,
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    label: l10n.thisYear,
+                    filter: TimeFilter.yearly,
+                    activeFilter: activeFilter,
+                    width: thisYearWidth,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required TimeFilter filter,
+    required TimeFilter activeFilter,
+    required double width,
+  }) {
     final bool isActive = filter == activeFilter;
     return GestureDetector(
       onTap: () {
@@ -377,8 +413,10 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        width: width,
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.primaryDark
@@ -390,12 +428,15 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
           ),
           boxShadow: isActive ? AppColors.softShadow : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-            color: isActive ? AppColors.white : AppColors.primaryLight,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+              color: isActive ? AppColors.white : AppColors.primaryLight,
+            ),
           ),
         ),
       ),
@@ -513,7 +554,6 @@ class _NativeBreakdownCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: < Widget >[
-              // 1. Baris Atas: Proporsi & Tipografi Identik TransactionCard
               Row(
                 children: < Widget >[
                   Container(
@@ -586,8 +626,6 @@ class _NativeBreakdownCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-
-              // 2. Horizontal Limit Spending Gauge
               LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
                   final double maxBarWidth = constraints.maxWidth;
@@ -618,8 +656,6 @@ class _NativeBreakdownCard extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 7),
-
-              // 3. Baris Mikro-Konteks Limit
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: < Widget >[

@@ -198,5 +198,29 @@
     "placeholders": {
       "number": { "type": "String" }
     }
+  },
+
+  "analyticsPercentOfLimit": "{percent}% of spending limit",
+  "@analyticsPercentOfLimit": {
+    "description": "Label showing percentage of spending limit used by an item or category",
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
+  },
+
+  "analyticsLimitBenchmark": "Limit {amount}",
+  "@analyticsLimitBenchmark": {
+    "description": "Label showing the active spending limit benchmark on the card",
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+
+  "analyticsPercentOfTotal": "{percent}% of total spent",
+  "@analyticsPercentOfTotal": {
+    "description": "Fallback label when spending limit is not set",
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
   }
 }

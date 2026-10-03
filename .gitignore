@@ -18,9 +18,7 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+# VS Code (Opsional, amankan file konfigurasi workspace lokal jika perlu)
 #.vscode/
 
 # Flutter/Dart/Pub related
@@ -46,3 +44,39 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# ==============================================================================
+# TAMBAHAN KEAMANAN ENTERPRISE (SECURITY HARDENING)
+# ==============================================================================
+
+# Environment Variables & Secrets (Mencegah API Key atau token rahasia bocor)
+.env
+.env.*
+!.env.example
+
+# Android Signing Keys & Credentials (Sangat Vital untuk Mencegah Pembajakan Aplikasi)
+/android/key.properties
+/android/*.jks
+/android/*.keystore
+
+# iOS Certificates & Provisioning Profiles
+*.p12
+*.cer
+*.mobileprovision
+*.pem
+
+# Local Database Files (Mencegah file Isar/SQLite lokal ikut terunggah)
+*.isar
+*.db
+*.sqlite
+*.sqlite3
+
+# OS Generated Thumbnails & Temporary Files
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.suo
+*.ntvs
+*.njsproj
+*.sln
+*.sw?

@@ -12,6 +12,7 @@ import '../providers/database_provider.dart';
 import '../providers/calculator_provider.dart';
 import '../providers/history_provider.dart';
 import '../widgets/input_bottom_sheet.dart';
+import '../features/analytics/screens/analytics_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -253,11 +254,18 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
+                    tooltip: 'Analitik & Laporan',
                     icon: const Icon(
                       Icons.pie_chart_rounded,
                       color: AppColors.greyText,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const AnalyticsScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

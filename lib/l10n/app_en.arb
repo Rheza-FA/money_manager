@@ -1,0 +1,78 @@
+{
+  "@@locale": "en",
+
+  "overview": "Overview",
+  "@overview": { "description": "Header title for the overview section" },
+
+  "transactions": "Transactions",
+  "@transactions": { "description": "Header title for the transactions list" },
+
+  "today": "Today",
+  "@today": { "description": "Filter tab label for today" },
+
+  "thisMonth": "This Month",
+  "@thisMonth": { "description": "Filter tab label for this month" },
+
+  "sixMonths": "6 Months",
+  "@sixMonths": { "description": "Filter tab label for six months" },
+
+  "thisYear": "This Year",
+  "@thisYear": { "description": "Filter tab label for this year" },
+
+  "noTransactions": "No transactions found.",
+  "@noTransactions": { "description": "Empty state message when there are no transactions" },
+
+  "expenseTab": "Expense",
+  "@expenseTab": { "description": "Bottom sheet tab label for adding an expense" },
+
+  "setBalanceTab": "Set Balance",
+  "@setBalanceTab": { "description": "Bottom sheet tab label for setting the main balance" },
+
+  "editTransaction": "Edit Transaction",
+  "@editTransaction": { "description": "Bottom sheet title when editing an existing transaction" },
+
+  "saveData": "Save Data",
+  "@saveData": { "description": "Button text to save a new entry" },
+
+  "updateData": "Update Data",
+  "@updateData": { "description": "Button text to update an existing entry" },
+
+  "itemName": "Item Name",
+  "@itemName": { "description": "Text field hint for the item name" },
+
+  "quantity": "Qty",
+  "@quantity": { "description": "Text field hint for the item quantity" },
+
+  "unitPrice": "Unit Price (Rp)",
+  "@unitPrice": { "description": "Text field hint for the unit price" },
+
+  "mainBalanceLabel": "Main Balance This Month",
+  "@mainBalanceLabel": { "description": "Label above the main balance input field" },
+
+  "totalBalanceInput": "Total Balance (Rp)",
+  "@totalBalanceInput": { "description": "Text field hint for the total balance" },
+
+  "dailyLimit": "DAILY LIMIT",
+  "@dailyLimit": { "description": "Card header label for daily limit" },
+
+  "fourteenDays": "14 Days",
+  "@fourteenDays": { "description": "Toggle button text for bi-weekly budgeting" },
+
+  "fullMonth": "Full Month",
+  "@fullMonth": { "description": "Toggle button text for full month budgeting" },
+
+  "safeBudgetBiWeekly": "Safe budget for today based on current cycle",
+  "@safeBudgetBiWeekly": { "description": "Footer context text for bi-weekly budget" },
+
+  "safeBudgetMonthly": "Safe budget for today based on full month",
+  "@safeBudgetMonthly": { "description": "Footer context text for monthly budget" },
+
+  "totalBalance": "TOTAL BALANCE",
+  "@totalBalance": { "description": "Header label inside the main balance circle" },
+
+  "tapToReveal": "Tap to reveal",
+  "@tapToReveal": { "description": "Affordance text guiding the user to show their balance" },
+
+  "tapToHide": "Tap to hide",
+  "@tapToHide": { "description": "Affordance text guiding the user to hide their balance" }
+}

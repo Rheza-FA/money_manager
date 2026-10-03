@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart'; // IMPORT DITAMBAHKAN UNTUK TYPOGRAPHY GLOBAL
+import 'package:google_fonts/google_fonts.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+
+// [INJEKSI LOKALISASI: Wajib di root aplikasi]
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart'; // Menggunakan jalur file fisik
+
 import 'models/expense.dart';
 import 'models/monthly_balance.dart';
 import 'providers/database_provider.dart';
@@ -36,9 +41,20 @@ class MoneyManagerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Money Manager',
       debugShowCheckedModeBanner: false,
+      
+      // --- PENDAFTARAN MESIN KAMUS (WAJIB AGAR CONTEXT TIDAK NULL) ---
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // Mengunci bahasa aplikasi secara absolut ke Inggris
+      ],
+      // ---------------------------------------------------------------
+
       theme: ThemeData(
-        // ROOT CAUSE FIX: Menghapus hardcode fontFamily: 'Montserrat' untuk menghindari bloat/konflik.
-        // Menginjeksi Plus Jakarta Sans secara presisi ke seluruh struktur TextTheme Material 3.
         textTheme: GoogleFonts.plusJakartaSansTextTheme(
           Theme.of(context).textTheme,
         ),

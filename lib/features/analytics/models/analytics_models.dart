@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:money_manager/l10n/app_localizations.dart';
 import 'package:money_manager/models/app_settings.dart';
 import 'package:money_manager/models/expense.dart';
-import 'package:money_manager/models/monthly_balance.dart';
 import 'package:money_manager/providers/history_provider.dart';
+import 'package:money_manager/theme/app_colors.dart';
 
 enum BreakdownMode {
   byItem,
@@ -20,10 +20,7 @@ enum BreakdownMode {
   }
 }
 
-/// Fallback bridge pada AppLocalizations agar kode bebas error garis merah
-/// bahkan sebelum `flutter gen-l10n` dijalankan. Saat `flutter gen-l10n` selesai
-/// mencetak instance getter ke `lib/l10n/app_localizations.dart`, Dart otomatis
-/// memprioritaskan instance getter hasil generate ARB.
+/// Fallback bridge pada AppLocalizations agar bebas error kompilasi.
 extension AnalyticsLocalizationBridge on AppLocalizations {
   String get analyticsByItem => 'By Item';
   String get analyticsByCategory => 'By Category';
@@ -35,7 +32,7 @@ extension AnalyticsLocalizationBridge on AppLocalizations {
   String analyticsPacePrefix(String date) => 'PACE • ' + date;
   String analyticsVsPrev(String delta) => delta + '% vs prev';
   String get analyticsFullMonth => 'Full Month';
-  String get analyticsBiWeekly => 'Bi-Weekly';
+  String get analyticsBiWeekly => '14 Days';
   String analyticsUnderSafeLimit(String diff, String limit) =>
       diff + ' under safe limit (' + limit + ')';
   String analyticsOverSafeLimit(String diff, String limit) =>
@@ -47,7 +44,7 @@ extension AnalyticsLocalizationBridge on AppLocalizations {
   String get analyticsFilterSixMonths => '6 Months';
   String get analyticsTopItems => 'Top Items';
   String get analyticsCategories => 'Categories';
-  String get analyticsEmptyTitle => 'No transactions recorded';
+  String get analyticsEmptyTitle => 'No transactions found.';
   String get analyticsEmptySubtitle =>
       'Tap + below to add an expense or switch the time filter.';
   String get analyticsDefaultExpenseName => 'Expense';
@@ -58,30 +55,33 @@ extension AnalyticsLocalizationBridge on AppLocalizations {
   String get analyticsCategoryOthers => 'General & Others';
   String get analyticsTodayShort => 'Today';
   String analyticsWeekShort(String number) => 'W' + number;
+  String analyticsPercentOfLimit(String percent) =>
+      percent + '% of spending limit';
+  String analyticsLimitBenchmark(String amount) => 'Limit ' + amount;
+  String analyticsPercentOfTotal(String percent) =>
+      percent + '% of total spent';
 }
 
-/// Token warna yang diambil langsung dari anatomi visual halaman pertama.
+/// Token warna yang mengacu langsung pada AppColors halaman pertama.
 class ForestTokens {
   const ForestTokens._();
 
-  static const Color canvasMint = Color(0xFFEAF4EE);
-  static const Color primaryForest = Color(0xFF0A332B);
-  static const Color forestElevated = Color(0xFF134238);
+  static const Color canvasMint = AppColors.backgroundTop;
+  static const Color primaryForest = AppColors.primaryDark;
+  static const Color primaryLight = AppColors.primaryLight;
   static const Color mintAccent = Color(0xFF84D696);
-  static const Color mutedSage = Color(0xFF88A89E);
-  static const Color greyText = Color(0xFF758A82);
+  static const Color greyText = AppColors.greyText;
   static const Color iconSurface = Color(0xFFF2F6F4);
-  static const Color pureWhite = Colors.white;
-  static const Color coralAlert = Color(0xFFFF8A71);
+  static const Color pureWhite = AppColors.white;
+  static const Color coralAlert = Color(0xFFE07A5F);
 
-  /// Palet segmen Donut Chart bernuansa botanical & kontras tinggi.
   static const List< Color > segmentPalette = < Color >[
-    Color(0xFF0A332B), // Deep Forest
-    Color(0xFF40916C), // Emerald Leaf
-    Color(0xFF84D696), // Soft Mint
-    Color(0xFFD9A05B), // Warm Amber Gold
-    Color(0xFF2D6A4F), // Pine Green
-    Color(0xFFE07A5F), // Terra Coral
+    AppColors.primaryDark,
+    Color(0xFF40916C),
+    Color(0xFF84D696),
+    Color(0xFFD9A05B),
+    Color(0xFF2D6A4F),
+    Color(0xFFE07A5F),
   ];
 }
 
@@ -136,12 +136,12 @@ class AnalyticsSnapshot {
   final TimeFilter activeFilter;
   final DateTime anchorDate;
   final double totalSpent;
-  final double previousSpent;
   final double dailyLimit;
   final bool isBiWeeklyMode;
   final int transactionCount;
   final int totalQuantity;
   final int activeDays;
+  final int distinctSpendingDays;
   final List< AllocationSlice > itemSlices;
   final List< AllocationSlice > categorySlices;
   final List< PaceBarPoint > paceSeries;
@@ -150,12 +150,12 @@ class AnalyticsSnapshot {
     required this.activeFilter,
     required this.anchorDate,
     required this.totalSpent,
-    required this.previousSpent,
     required this.dailyLimit,
     required this.isBiWeeklyMode,
     required this.transactionCount,
     required this.totalQuantity,
     required this.activeDays,
+    required this.distinctSpendingDays,
     required this.itemSlices,
     required this.categorySlices,
     required this.paceSeries,
@@ -164,16 +164,30 @@ class AnalyticsSnapshot {
   double get averageDailySpent =>
       activeDays > 0 ? totalSpent / activeDays : totalSpent;
 
-  double? get deltaPercentage {
-    if (previousSpent <= 0) return null;
-    return ((totalSpent - previousSpent) / previousSpent) * 100;
-  }
-
   List< AllocationSlice > slicesFor(BreakdownMode mode) =>
       mode == BreakdownMode.byItem ? itemSlices : categorySlices;
 
   double shareOf(double value) =>
       totalSpent > 0 ? (value / totalSpent) * 100 : 0.0;
+
+  /// Menggunakan Daily Limit yang sama persis dengan halaman pertama (maxDailySpendingProvider).
+  double get effectiveSpendingLimit {
+    if (dailyLimit <= 0) return 0.0;
+    if (activeFilter == TimeFilter.daily ||
+        activeFilter == TimeFilter.customDate ||
+        distinctSpendingDays <= 1) {
+      return dailyLimit;
+    }
+    return dailyLimit * distinctSpendingDays;
+  }
+
+  double limitShareOf(double value) {
+    final double limit = effectiveSpendingLimit;
+    if (limit > 0) {
+      return (value / limit) * 100;
+    }
+    return shareOf(value);
+  }
 }
 
 class AnalyticsEngine {
@@ -181,7 +195,9 @@ class AnalyticsEngine {
 
   static AnalyticsSnapshot compute({
     required List< Expense > allExpenses,
-    required MonthlyBalance? monthlyBalance,
+    required List< Expense > filteredExpenses,
+    required double totalFilteredExpense,
+    required double exactDailyLimit,
     required AppSettings? settings,
     required TimeFilter filter,
     required DateTime? customDate,
@@ -191,52 +207,23 @@ class AnalyticsEngine {
     final DateTime anchor = customDate ?? now;
     final bool isBiWeekly = settings?.isBiWeeklyMode ?? false;
 
-    final double dailyLimit = _computeDailyLimit(
-      allExpenses: allExpenses,
-      monthlyBalance: monthlyBalance,
-      isBiWeekly: isBiWeekly,
-      now: now,
-    );
-
-    final ({
-      DateTime start,
-      DateTime end,
-      DateTime prevStart,
-      DateTime prevEnd,
-      int days,
-    }) range = _resolveRange(filter, anchor);
-
-    final List< Expense > currentList = < Expense >[];
-    final List< Expense > previousList = < Expense >[];
-
-    for (final Expense e in allExpenses) {
-      if (!e.date.isBefore(range.start) && e.date.isBefore(range.end)) {
-        currentList.add(e);
-      } else if (!e.date.isBefore(range.prevStart) &&
-          e.date.isBefore(range.prevEnd)) {
-        previousList.add(e);
-      }
-    }
-
-    double totalSpent = 0.0;
     int totalQty = 0;
-    for (final Expense e in currentList) {
-      totalSpent += e.totalAmount;
+    final Set< int > uniqueDayKeys = < int >{};
+
+    for (final Expense e in filteredExpenses) {
       totalQty += _extractQty(e);
+      uniqueDayKeys.add(e.date.year * 10000 + e.date.month * 100 + e.date.day);
     }
 
-    double previousSpent = 0.0;
-    for (final Expense e in previousList) {
-      previousSpent += e.totalAmount;
-    }
+    final int elapsedDays = _resolveElapsedDays(filter, anchor);
 
     final List< AllocationSlice > itemSlices = _buildSlices(
-      currentList,
+      filteredExpenses,
       byCategory: false,
       l10n: l10n,
     );
     final List< AllocationSlice > categorySlices = _buildSlices(
-      currentList,
+      filteredExpenses,
       byCategory: true,
       l10n: l10n,
     );
@@ -245,126 +232,43 @@ class AnalyticsEngine {
       allExpenses: allExpenses,
       filter: filter,
       anchor: anchor,
-      dailyLimit: dailyLimit,
+      dailyLimit: exactDailyLimit,
       l10n: l10n,
     );
 
     return AnalyticsSnapshot(
       activeFilter: filter,
       anchorDate: anchor,
-      totalSpent: totalSpent,
-      previousSpent: previousSpent,
-      dailyLimit: dailyLimit,
+      totalSpent: totalFilteredExpense,
+      dailyLimit: exactDailyLimit,
       isBiWeeklyMode: isBiWeekly,
-      transactionCount: currentList.length,
+      transactionCount: filteredExpenses.length,
       totalQuantity: totalQty,
-      activeDays: range.days,
+      activeDays: elapsedDays,
+      distinctSpendingDays: math.max(1, uniqueDayKeys.length),
       itemSlices: itemSlices,
       categorySlices: categorySlices,
       paceSeries: paceSeries,
     );
   }
 
-  static double _computeDailyLimit({
-    required List< Expense > allExpenses,
-    required MonthlyBalance? monthlyBalance,
-    required bool isBiWeekly,
-    required DateTime now,
-  }) {
-    final double initialBudget = monthlyBalance?.balance ?? 0.0;
-    if (initialBudget <= 0) return 0.0;
-
-    final DateTime todayStart = DateTime(now.year, now.month, now.day);
-    double spentBeforeToday = 0.0;
-
-    for (final Expense e in allExpenses) {
-      if (e.date.year == now.year &&
-          e.date.month == now.month &&
-          e.date.isBefore(todayStart)) {
-        spentBeforeToday += e.totalAmount;
-      }
-    }
-
-    final double remainingBudget =
-        math.max(0.0, initialBudget - spentBeforeToday);
-    final int daysInMonth = DateUtils.getDaysInMonth(now.year, now.month);
-
-    if (isBiWeekly) {
-      final int targetDay = now.day <= 15 ? 15 : daysInMonth;
-      final int remainingDays = math.max(1, targetDay - now.day + 1);
-      return remainingBudget / remainingDays;
-    } else {
-      final int remainingDays = math.max(1, daysInMonth - now.day + 1);
-      return remainingBudget / remainingDays;
-    }
-  }
-
-  static ({
-    DateTime start,
-    DateTime end,
-    DateTime prevStart,
-    DateTime prevEnd,
-    int days,
-  }) _resolveRange(TimeFilter filter, DateTime anchor) {
-    final DateTime dayStart = DateTime(anchor.year, anchor.month, anchor.day);
-
+  static int _resolveElapsedDays(TimeFilter filter, DateTime anchor) {
+    final DateTime now = DateTime.now();
     switch (filter) {
       case TimeFilter.daily:
       case TimeFilter.customDate:
-        final DateTime end = dayStart.add(const Duration(days: 1));
-        final DateTime prevStart = dayStart.subtract(const Duration(days: 1));
-        return (
-          start: dayStart,
-          end: end,
-          prevStart: prevStart,
-          prevEnd: dayStart,
-          days: 1,
-        );
-
+        return 1;
       case TimeFilter.monthly:
-        final DateTime start = DateTime(anchor.year, anchor.month, 1);
-        final DateTime end = DateTime(anchor.year, anchor.month + 1, 1);
-        final DateTime prevStart = DateTime(anchor.year, anchor.month - 1, 1);
-        final DateTime now = DateTime.now();
-        final int elapsedDays =
-            (anchor.year == now.year && anchor.month == now.month)
-                ? math.max(1, now.day)
-                : DateUtils.getDaysInMonth(anchor.year, anchor.month);
-        return (
-          start: start,
-          end: end,
-          prevStart: prevStart,
-          prevEnd: start,
-          days: elapsedDays,
-        );
-
+        return (anchor.year == now.year && anchor.month == now.month)
+            ? math.max(1, now.day)
+            : DateUtils.getDaysInMonth(anchor.year, anchor.month);
       case TimeFilter.sixMonths:
         final DateTime start =
             DateTime(anchor.year, anchor.month - 6, anchor.day);
-        final DateTime end = dayStart.add(const Duration(days: 1));
-        final DateTime prevStart =
-            DateTime(anchor.year, anchor.month - 12, anchor.day);
-        final int days = math.max(1, end.difference(start).inDays);
-        return (
-          start: start,
-          end: end,
-          prevStart: prevStart,
-          prevEnd: start,
-          days: days,
-        );
-
+        return math.max(1, anchor.difference(start).inDays);
       case TimeFilter.yearly:
         final DateTime start = DateTime(anchor.year, 1, 1);
-        final DateTime end = DateTime(anchor.year + 1, 1, 1);
-        final DateTime prevStart = DateTime(anchor.year - 1, 1, 1);
-        final int days = math.max(1, DateTime.now().difference(start).inDays);
-        return (
-          start: start,
-          end: end,
-          prevStart: prevStart,
-          prevEnd: start,
-          days: days,
-        );
+        return math.max(1, now.difference(start).inDays);
     }
   }
 

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:money_manager/l10n/app_localizations.dart';
+import 'package:money_manager/theme/app_colors.dart';
 import '../models/analytics_models.dart';
 
 class InteractiveDonutChart extends StatelessWidget {
@@ -94,15 +95,9 @@ class InteractiveDonutChart extends StatelessWidget {
           width: _pedestalSize,
           height: _pedestalSize,
           decoration: BoxDecoration(
-            color: ForestTokens.pureWhite,
+            color: AppColors.white,
             shape: BoxShape.circle,
-            boxShadow: < BoxShadow >[
-              BoxShadow(
-                color: ForestTokens.primaryForest.withValues(alpha: 0.06),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: AppColors.softShadow,
           ),
           child: Stack(
             alignment: Alignment.center,
@@ -143,9 +138,9 @@ class InteractiveDonutChart extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.1,
-                          color: ForestTokens.greyText,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
+                          color: AppColors.greyText,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -160,17 +155,16 @@ class InteractiveDonutChart extends StatelessWidget {
                               'Rp ',
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: ForestTokens.greyText,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.greyText,
                               ),
                             ),
                             Text(
                               IdrFormatter.numberOnly(displayAmount),
                               style: const TextStyle(
                                 fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: ForestTokens.primaryForest,
-                                letterSpacing: -0.8,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryDark,
                               ),
                             ),
                           ],
@@ -184,7 +178,7 @@ class InteractiveDonutChart extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: activeSlice != null
-                              ? activeSlice.color.withValues(alpha: 0.14)
+                              ? activeSlice.color.withValues(alpha: 0.12)
                               : ForestTokens.canvasMint,
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -192,9 +186,8 @@ class InteractiveDonutChart extends StatelessWidget {
                           pillText,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: activeSlice?.color ??
-                                ForestTokens.primaryForest,
+                            fontWeight: FontWeight.w600,
+                            color: activeSlice?.color ?? AppColors.primaryDark,
                           ),
                         ),
                       ),

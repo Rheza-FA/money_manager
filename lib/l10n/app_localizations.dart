@@ -217,7 +217,7 @@ abstract class AppLocalizations {
   /// Footer context text for bi-weekly budget
   ///
   /// In en, this message translates to:
-  /// **'Safe budget for today based on current cycle'**
+  /// **'Safe budget for today based on the cycle'**
   String get safeBudgetBiWeekly;
 
   /// Footer context text for monthly budget
@@ -243,6 +243,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to hide'**
   String get tapToHide;
+
+  /// Toggle label to group analytics by item
+  ///
+  /// In en, this message translates to:
+  /// **'By Item'**
+  String get analyticsByItem;
+
+  /// Toggle label to group analytics by category
+  ///
+  /// In en, this message translates to:
+  /// **'By Category'**
+  String get analyticsByCategory;
+
+  /// Header label inside the analytics donut chart
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL SPENT'**
+  String get analyticsTotalSpent;
+
+  /// Badge label when there are no expenses
+  ///
+  /// In en, this message translates to:
+  /// **'No activity'**
+  String get analyticsNoActivity;
+
+  /// Badge label when there is 1 expense group
+  ///
+  /// In en, this message translates to:
+  /// **'1 source'**
+  String get analyticsSingleSource;
+
+  /// Badge label showing total number of expense groups
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sources'**
+  String analyticsMultipleSources(String count);
+
+  /// Header label for the spending pace card
+  ///
+  /// In en, this message translates to:
+  /// **'SPENDING PACE'**
+  String get analyticsSpendingPace;
+
+  /// Header label showing pace for a selected date or period
+  ///
+  /// In en, this message translates to:
+  /// **'PACE • {date}'**
+  String analyticsPacePrefix(String date);
+
+  /// Comparison badge against previous period
+  ///
+  /// In en, this message translates to:
+  /// **'{delta}% vs prev'**
+  String analyticsVsPrev(String delta);
+
+  /// Badge label for full month mode in analytics
+  ///
+  /// In en, this message translates to:
+  /// **'Full Month'**
+  String get analyticsFullMonth;
+
+  /// Badge label for 14-day bi-weekly mode in analytics
+  ///
+  /// In en, this message translates to:
+  /// **'14 Days'**
+  String get analyticsBiWeekly;
+
+  /// Status line when spending is below the safe limit
+  ///
+  /// In en, this message translates to:
+  /// **'{diff} under safe limit ({limit})'**
+  String analyticsUnderSafeLimit(String diff, String limit);
+
+  /// Status line when spending exceeds the safe limit
+  ///
+  /// In en, this message translates to:
+  /// **'{diff} over safe limit ({limit})'**
+  String analyticsOverSafeLimit(String diff, String limit);
+
+  /// Fallback status line showing average daily spending
+  ///
+  /// In en, this message translates to:
+  /// **'Avg {amount}/day across active period'**
+  String analyticsAvgPerDay(String amount);
+
+  /// Analytics filter pill for today
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get analyticsFilterToday;
+
+  /// Analytics filter pill for this month
+  ///
+  /// In en, this message translates to:
+  /// **'This Month'**
+  String get analyticsFilterThisMonth;
+
+  /// Analytics filter pill for six months
+  ///
+  /// In en, this message translates to:
+  /// **'6 Months'**
+  String get analyticsFilterSixMonths;
+
+  /// Section title for item breakdown list
+  ///
+  /// In en, this message translates to:
+  /// **'Top Items'**
+  String get analyticsTopItems;
+
+  /// Section title for category breakdown list
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get analyticsCategories;
+
+  /// Empty state title in analytics breakdown
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions found.'**
+  String get analyticsEmptyTitle;
+
+  /// Empty state subtitle in analytics breakdown
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + below to add an expense or switch the time filter.'**
+  String get analyticsEmptySubtitle;
+
+  /// Default fallback title for unnamed expense
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get analyticsDefaultExpenseName;
+
+  /// Category label for food and meals
+  ///
+  /// In en, this message translates to:
+  /// **'Food & Meals'**
+  String get analyticsCategoryFood;
+
+  /// Category label for drinks and coffee
+  ///
+  /// In en, this message translates to:
+  /// **'Drinks & Coffee'**
+  String get analyticsCategoryDrinks;
+
+  /// Category label for transportation
+  ///
+  /// In en, this message translates to:
+  /// **'Transport'**
+  String get analyticsCategoryTransport;
+
+  /// Category label for bills and utilities
+  ///
+  /// In en, this message translates to:
+  /// **'Bills & Utilities'**
+  String get analyticsCategoryBills;
+
+  /// Category label for general expenses
+  ///
+  /// In en, this message translates to:
+  /// **'General & Others'**
+  String get analyticsCategoryOthers;
+
+  /// Short bar label for today
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get analyticsTodayShort;
+
+  /// Short bar label for week number
+  ///
+  /// In en, this message translates to:
+  /// **'W{number}'**
+  String analyticsWeekShort(String number);
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+// [INJEKSI LOKALISASI]
+import '../l10n/app_localizations.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/balance_overview_circle.dart';
@@ -16,6 +18,8 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final balanceAsync = ref.watch(currentMonthBalanceProvider);
     final maxDailySpending = ref.watch(maxDailySpendingProvider);
 
@@ -42,13 +46,11 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
           ),
-
           SafeArea(
             bottom: false,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // 2. Main Balance Circle
                 SliverToBoxAdapter(
                   child: balanceAsync.when(
                     data: (balanceData) => BalanceOverviewCircle(
@@ -73,18 +75,11 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-                // 3. Daily Limit Card
                 SliverToBoxAdapter(
                   child: DailyLimitCard(maxDaily: maxDailySpending),
                 ),
-
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
-
-                // 4. Integrated Filter Chips
-                // 4. Integrated Filter Chips & Calendar
                 SliverToBoxAdapter(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -92,7 +87,6 @@ class DashboardScreen extends ConsumerWidget {
                     physics: const BouncingScrollPhysics(),
                     child: Row(
                       children: [
-                        // Tombol Kalender Melayang
                         GestureDetector(
                           onTap: () async {
                             final date = await showDatePicker(
@@ -101,7 +95,7 @@ class DashboardScreen extends ConsumerWidget {
                                   ref.read(customDateProvider) ??
                                   DateTime.now(),
                               firstDate: DateTime(2020),
-                              lastDate: DateTime.now(), // Memblokir seleksi masa depan
+                              lastDate: DateTime.now(),
                               builder: (context, child) {
                                 return Theme(
                                   data: Theme.of(context).copyWith(
@@ -116,7 +110,6 @@ class DashboardScreen extends ConsumerWidget {
                               },
                             );
                             if (date != null) {
-                              // UBAH BARIS INI: Gunakan .setDate(date)
                               ref
                                   .read(customDateProvider.notifier)
                                   .setDate(date);
@@ -152,43 +145,16 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-
-                        _buildFilterChip(
-                          context,
-                          ref,
-                          "Hari Ini",
-                          TimeFilter.daily,
-                          activeFilter,
-                        ),
-                        _buildFilterChip(
-                          context,
-                          ref,
-                          "Bulan Ini",
-                          TimeFilter.monthly,
-                          activeFilter,
-                        ),
-                        _buildFilterChip(
-                          context,
-                          ref,
-                          "6 Bulan",
-                          TimeFilter.sixMonths,
-                          activeFilter,
-                        ),
-                        _buildFilterChip(
-                          context,
-                          ref,
-                          "Tahun Ini",
-                          TimeFilter.yearly,
-                          activeFilter,
-                        ),
+                        // [INJEKSI LOKALISASI PADA FILTER TABS]
+                        _buildFilterChip(context, ref, l10n.today, TimeFilter.daily, activeFilter),
+                        _buildFilterChip(context, ref, l10n.thisMonth, TimeFilter.monthly, activeFilter),
+                        _buildFilterChip(context, ref, l10n.sixMonths, TimeFilter.sixMonths, activeFilter),
+                        _buildFilterChip(context, ref, l10n.thisYear, TimeFilter.yearly, activeFilter),
                       ],
                     ),
                   ),
                 ),
-
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                // 5. Section Header & Dynamic Total
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -196,9 +162,9 @@ class DashboardScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
-                          "Transactions",
-                          style: TextStyle(
+                        Text(
+                          l10n.transactions, // [INJEKSI LOKALISASI]
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryDark,
@@ -216,18 +182,15 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                // 6. Fluid Transaction List (No nested scroll constraints)
                 if (filteredExpenses.isEmpty)
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.only(top: 40),
+                      padding: const EdgeInsets.only(top: 40),
                       child: Center(
                         child: Text(
-                          "No transactions found.",
-                          style: TextStyle(
+                          l10n.noTransactions, // [INJEKSI LOKALISASI]
+                          style: const TextStyle(
                             color: AppColors.greyText,
                             fontWeight: FontWeight.w500,
                           ),
@@ -246,14 +209,10 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-
-                // Spacer to avoid bottom nav bar collision
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
           ),
-
-          // 7. Floating Bottom Navigation Bar
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -286,8 +245,8 @@ class DashboardScreen extends ConsumerWidget {
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
-                          isScrollControlled: true, // Wajib true agar modal bisa membesar saat keyboard muncul
-                          backgroundColor: Colors.transparent, // Transparan agar border radius modal terlihat
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
                           builder: (context) => const InputBottomSheet(),
                         );
                       },

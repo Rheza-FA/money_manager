@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
+// [INJEKSI LOKALISASI]
+import '../l10n/app_localizations.dart';
+
 import '../theme/app_colors.dart';
 import '../providers/database_provider.dart';
 import '../models/expense.dart';
@@ -107,7 +110,6 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
         _isSuccess = true;
       });
       
-      // Tahan sheet sesaat agar animasi (400ms) selesai dan terlihat jelas
       await Future.delayed(const Duration(milliseconds: 600));
       
       if (mounted) Navigator.pop(context);
@@ -133,6 +135,9 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // [BEST PRACTICE: Cache kamus]
+    final l10n = AppLocalizations.of(context)!;
+
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     final isEditMode = widget.expenseToEdit != null;
 
@@ -176,7 +181,10 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                             boxShadow: isExpenseTab ? AppColors.softShadow : null,
                           ),
                           alignment: Alignment.center,
-                          child: Text("Pengeluaran", style: TextStyle(color: isExpenseTab ? AppColors.white : AppColors.greyText, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            l10n.expenseTab, // [INJEKSI LOKALISASI]
+                            style: TextStyle(color: isExpenseTab ? AppColors.white : AppColors.greyText, fontWeight: FontWeight.w600)
+                          ),
                         ),
                       ),
                     ),
@@ -194,7 +202,10 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                             boxShadow: !isExpenseTab ? AppColors.softShadow : null,
                           ),
                           alignment: Alignment.center,
-                          child: Text("Set Saldo", style: TextStyle(color: !isExpenseTab ? AppColors.white : AppColors.greyText, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            l10n.setBalanceTab, // [INJEKSI LOKALISASI]
+                            style: TextStyle(color: !isExpenseTab ? AppColors.white : AppColors.greyText, fontWeight: FontWeight.w600)
+                          ),
                         ),
                       ),
                     ),
@@ -202,7 +213,12 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                 ),
               )
             else
-               const Center(child: Text("Edit Transaksi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primaryDark))),
+               Center(
+                 child: Text(
+                   l10n.editTransaction, // [INJEKSI LOKALISASI]
+                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primaryDark)
+                 )
+               ),
             
             const SizedBox(height: 32),
             
@@ -219,7 +235,10 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                   ),
                 );
               },
-              child: isExpenseTab ? _buildExpenseForm(key: const ValueKey("expense")) : _buildBalanceForm(key: const ValueKey("balance")),
+              // Pass context agar l10n bisa digunakan di sub-widget
+              child: isExpenseTab 
+                  ? _buildExpenseForm(context: context, l10n: l10n, key: const ValueKey("expense")) 
+                  : _buildBalanceForm(context: context, l10n: l10n, key: const ValueKey("balance")),
             ),
             
             const SizedBox(height: 32),
@@ -236,11 +255,10 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                   elevation: 0,
                   animationDuration: const Duration(milliseconds: 300),
                 ),
-                // Efisiensi: Manfaatkan AnimatedSwitcher bawaan dengan kurva Elastic Out
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400), // Durasi sedikit dinaikkan agar efek elastic lebih terasa
+                  duration: const Duration(milliseconds: 400),
                   switchInCurve: Curves.elasticOut,
-                  switchOutCurve: Curves.easeInBack, // Teks menghilang sedikit ditarik ke belakang
+                  switchOutCurve: Curves.easeInBack, 
                   transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
                   child: _isSuccess
                       ? const Icon(
@@ -251,7 +269,7 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                         )
                       : Text(
                           key: const ValueKey("text"),
-                          isEditMode ? "Perbarui Data" : "Simpan Data", 
+                          isEditMode ? l10n.updateData : l10n.saveData, // [INJEKSI LOKALISASI]
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)
                         ),
                 ),
@@ -263,32 +281,33 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
     );
   }
 
-  Widget _buildExpenseForm({Key? key}) {
+  // Parameter ditambah l10n untuk injeksi teks
+  Widget _buildExpenseForm({required BuildContext context, required AppLocalizations l10n, Key? key}) {
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTextField(label: "Nama Item", controller: _nameController, focusNode: _nameFocus, icon: Icons.shopping_bag_outlined),
+        _buildTextField(label: l10n.itemName, controller: _nameController, focusNode: _nameFocus, icon: Icons.shopping_bag_outlined),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(flex: 1, child: _buildTextField(label: "Qty", controller: _qtyController, focusNode: _qtyFocus, icon: Icons.numbers_rounded, isNumber: true)),
+            Expanded(flex: 1, child: _buildTextField(label: l10n.quantity, controller: _qtyController, focusNode: _qtyFocus, icon: Icons.numbers_rounded, isNumber: true)),
             const SizedBox(width: 16),
-            Expanded(flex: 2, child: _buildTextField(label: "Harga Satuan (Rp)", controller: _priceController, focusNode: _priceFocus, icon: Icons.attach_money_rounded, isNumber: true)),
+            Expanded(flex: 2, child: _buildTextField(label: l10n.unitPrice, controller: _priceController, focusNode: _priceFocus, icon: Icons.attach_money_rounded, isNumber: true)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildBalanceForm({Key? key}) {
+  Widget _buildBalanceForm({required BuildContext context, required AppLocalizations l10n, Key? key}) {
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Saldo Utama Bulan Ini", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+        Text(l10n.mainBalanceLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
         const SizedBox(height: 8),
-        _buildTextField(label: "Total Saldo (Rp)", controller: _balanceController, focusNode: _balanceFocus, icon: Icons.account_balance_wallet_outlined, isNumber: true),
+        _buildTextField(label: l10n.totalBalanceInput, controller: _balanceController, focusNode: _balanceFocus, icon: Icons.account_balance_wallet_outlined, isNumber: true),
       ],
     );
   }

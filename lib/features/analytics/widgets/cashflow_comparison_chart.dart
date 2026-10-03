@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:money_manager/l10n/app_localizations.dart';
 import 'package:money_manager/theme/app_colors.dart';
 import '../models/analytics_models.dart';
@@ -20,11 +21,26 @@ class ForestPaceHeroCard extends StatefulWidget {
 
 class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
   late int _selectedIndex;
+  ScrollPosition? _scrollPosition;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = _resolveInitialIndex();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ScrollPosition? position = Scrollable.maybeOf(context)?.position;
+      if (_scrollPosition != position) {
+        setState(() {
+          _scrollPosition = position;
+        });
+      }
+    });
   }
 
   @override
@@ -57,6 +73,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
         activePoint?.spent ?? widget.snapshot.totalSpent;
     final double benchmark =
         activePoint?.safeLimit ?? widget.snapshot.dailyLimit;
+    final bool isBiWeekly = widget.snapshot.isBiWeeklyMode;
 
     String statusLine;
     if (benchmark > 0) {
@@ -73,137 +90,173 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
         );
       }
     } else {
-      statusLine = widget.snapshot.isBiWeeklyMode
-          ? l10n.safeBudgetBiWeekly
-          : l10n.safeBudgetMonthly;
+      statusLine =
+          isBiWeekly ? l10n.safeBudgetBiWeekly : l10n.safeBudgetMonthly;
     }
-
-    final String cycleLabel =
-        widget.snapshot.isBiWeeklyMode ? l10n.fourteenDays : l10n.fullMonth;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: AppColors.softShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: < Widget >[
-          // Baris Atas: Ikon + Label Abu-abu Sage + Tombol Cycle Mode Identik DailyLimitCard
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: < Widget >[
-              Row(
-                children: < Widget >[
-                  const Icon(
-                    Icons.monetization_on,
-                    size: 20,
-                    color: ForestTokens.mintAccent,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    activePoint != null
-                        ? l10n.analyticsPacePrefix(
-                            activePoint.contextTitle.toUpperCase(),
-                          )
-                        : l10n.analyticsSpendingPace,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.5,
-                      color: AppColors.greyText,
-                    ),
-                  ),
-                ],
+      child: AnimatedBuilder(
+        animation: _scrollPosition ?? const AlwaysStoppedAnimation< double >(0.0),
+        builder: (BuildContext context, Widget? child) {
+          final double offset = _scrollPosition?.pixels ?? 0.0;
+          final double translateY = (offset * 0.10).clamp(-15.0, 15.0);
+
+          return Transform.translate(
+            offset: Offset(0, translateY),
+            child: child,
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: < BoxShadow >[
+              BoxShadow(
+                color: AppColors.primaryDark.withValues(alpha: 0.12),
+                blurRadius: 30,
+                offset: const Offset(0, 16),
               ),
-              GestureDetector(
-                onTap: widget.onToggleSpendingMode,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.white.withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              color: AppColors.primaryDark,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: < Widget >[
+                  // 1. Baris Header: Warna, Ketebalan, & Intensitas 100% Identik DailyLimitCard
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: < Widget >[
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        size: 14,
-                        color: AppColors.greyText,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: < Widget >[
+                          const Icon(
+                            Icons.monetization_on_rounded,
+                            color: AppColors.accentGreen,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            activePoint != null
+                                ? l10n.analyticsPacePrefix(
+                                    activePoint.contextTitle.toUpperCase(),
+                                  )
+                                : l10n.analyticsSpendingPace,
+                            style: TextStyle(
+                              color: AppColors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        cycleLabel,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.white,
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          widget.onToggleSpendingMode?.call();
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.white.withValues(alpha: 0.15),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: < Widget >[
+                              Icon(
+                                isBiWeekly
+                                    ? Icons.view_week_rounded
+                                    : Icons.calendar_today_rounded,
+                                color: AppColors.white.withValues(alpha: 0.9),
+                                size: 12,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isBiWeekly
+                                    ? l10n.fourteenDays
+                                    : l10n.fullMonth,
+                                style: TextStyle(
+                                  color: AppColors.white.withValues(alpha: 0.9),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
+
+                  const SizedBox(height: 28),
+
+                  // 2. Nominal Utama: RichText Identik DailyLimitCard (White 0.7 w600 + White w800)
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(),
+                      children: < InlineSpan >[
+                        TextSpan(
+                          text: 'Rp ',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        TextSpan(
+                          text: IdrFormatter.numberOnly(headlineAmount),
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.white,
+                            letterSpacing: -1.0,
+                            height: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // 3. Sub-teks Footer: White 0.7, fontSize 12, FontWeight.w500 Identik DailyLimitCard
+                  Text(
+                    statusLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 4. Grafik Batang Interaktif dengan Kontras Terang
+                  if (series.isNotEmpty)
+                    _buildInteractiveBars(series, benchmark),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Baris Nominal Utama: "Rp" Regular GreyText + Angka Bold Putih
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: < Widget >[
-                const Text(
-                  'Rp ',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.greyText,
-                  ),
-                ),
-                Text(
-                  IdrFormatter.numberOnly(headlineAmount),
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.white,
-                  ),
-                ),
-              ],
             ),
           ),
-          const SizedBox(height: 8),
-
-          // Sub-teks Regular GreyText
-          Text(
-            statusLine,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-              color: AppColors.greyText,
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          // Grafik Batang Interaktif
-          if (series.isNotEmpty) _buildInteractiveBars(series, benchmark),
-        ],
+        ),
       ),
     );
   }
@@ -237,7 +290,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                   child: CustomPaint(
                     size: Size(constraints.maxWidth, 1.5),
                     painter: _LimitDashedLinePainter(
-                      color: ForestTokens.mintAccent.withValues(alpha: 0.40),
+                      color: AppColors.accentGreen.withValues(alpha: 0.55),
                     ),
                   ),
                 ),
@@ -252,21 +305,24 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
 
                   Color barFill;
                   if (pt.spent <= 0) {
-                    barFill = AppColors.white.withValues(alpha: 0.08);
+                    barFill = AppColors.white.withValues(alpha: 0.14);
                   } else if (pt.isOverLimit) {
                     barFill = isSelected
                         ? ForestTokens.coralAlert
-                        : ForestTokens.coralAlert.withValues(alpha: 0.55);
+                        : ForestTokens.coralAlert.withValues(alpha: 0.65);
                   } else {
                     barFill = isSelected
-                        ? AppColors.white
-                        : ForestTokens.mintAccent.withValues(alpha: 0.55);
+                        ? AppColors.accentGreen
+                        : AppColors.white.withValues(alpha: 0.45);
                   }
 
                   return Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => _selectedIndex = idx),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _selectedIndex = idx);
+                      },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: < Widget >[
@@ -293,13 +349,13 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                               pt.label,
                               maxLines: 1,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                                 color: isSelected
-                                    ? AppColors.white
-                                    : AppColors.greyText,
+                                    ? AppColors.white.withValues(alpha: 0.95)
+                                    : AppColors.white.withValues(alpha: 0.7),
                               ),
                             ),
                           ),

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-// [INJEKSI LOKALISASI]
 import '../l10n/app_localizations.dart';
-
 import '../theme/app_colors.dart';
 import '../widgets/balance_overview_circle.dart';
 import '../widgets/daily_limit_card.dart';
@@ -19,16 +17,18 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
+    final AppLocalizations l10n = AppLocalizations.of(context)!;
 
-    final balanceAsync = ref.watch(currentMonthBalanceProvider);
-    final maxDailySpending = ref.watch(maxDailySpendingProvider);
+    final AsyncValue< dynamic > balanceAsync =
+        ref.watch(currentMonthBalanceProvider);
+    final double maxDailySpending = ref.watch(maxDailySpendingProvider);
 
-    final activeFilter = ref.watch(timeFilterProvider);
-    final filteredExpenses = ref.watch(filteredExpensesProvider);
-    final totalExpense = ref.watch(filteredTotalExpenseProvider);
+    final TimeFilter activeFilter = ref.watch(timeFilterProvider);
+    final List< dynamic > filteredExpenses =
+        ref.watch(filteredExpensesProvider);
+    final double totalExpense = ref.watch(filteredTotalExpenseProvider);
 
-    final formatCurrency = NumberFormat.currency(
+    final NumberFormat formatCurrency = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
@@ -37,7 +37,7 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundTop,
       body: Stack(
-        children: [
+        children: < Widget >[
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -51,11 +51,11 @@ class DashboardScreen extends ConsumerWidget {
             bottom: false,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
-              slivers: [
+              slivers: < Widget >[
                 SliverToBoxAdapter(
                   child: balanceAsync.when(
-                    data: (balanceData) => BalanceOverviewCircle(
-                      balance: balanceData?.balance ?? 0.0,
+                    data: (dynamic balanceData) => BalanceOverviewCircle(
+                      balance: (balanceData?.balance as double?) ?? 0.0,
                     ),
                     loading: () => const SizedBox(
                       height: 300,
@@ -65,11 +65,11 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    error: (e, st) => SizedBox(
+                    error: (Object e, StackTrace st) => SizedBox(
                       height: 300,
                       child: Center(
                         child: Text(
-                          "Error: $e",
+                          'Error: ' + e.toString(),
                           style: const TextStyle(color: AppColors.primaryDark),
                         ),
                       ),
@@ -81,80 +81,17 @@ class DashboardScreen extends ConsumerWidget {
                   child: DailyLimitCard(maxDaily: maxDailySpending),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
+
+                // Filter Row yang rata sempurna dengan batas kiri & kanan kartu (horizontal: 24)
                 SliverToBoxAdapter(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate:
-                                  ref.read(customDateProvider) ??
-                                  DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime.now(),
-                              builder: (context, child) {
-                                return Theme(
-                                  data: Theme.of(context).copyWith(
-                                    colorScheme: const ColorScheme.light(
-                                      primary: AppColors.primaryDark,
-                                      onPrimary: AppColors.white,
-                                      onSurface: AppColors.primaryDark,
-                                    ),
-                                  ),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            if (date != null) {
-                              ref
-                                  .read(customDateProvider.notifier)
-                                  .setDate(date);
-                              ref
-                                  .read(timeFilterProvider.notifier)
-                                  .setFilter(TimeFilter.customDate);
-                            }
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: activeFilter == TimeFilter.customDate
-                                  ? AppColors.primaryDark
-                                  : AppColors.white.withValues(alpha: 0.6),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: activeFilter == TimeFilter.customDate
-                                    ? Colors.transparent
-                                    : AppColors.white,
-                                width: 1.5,
-                              ),
-                              boxShadow: activeFilter == TimeFilter.customDate
-                                  ? AppColors.softShadow
-                                  : null,
-                            ),
-                            child: Icon(
-                              Icons.calendar_month_rounded,
-                              size: 18,
-                              color: activeFilter == TimeFilter.customDate
-                                  ? AppColors.white
-                                  : AppColors.primaryLight,
-                            ),
-                          ),
-                        ),
-                        // [INJEKSI LOKALISASI PADA FILTER TABS]
-                        _buildFilterChip(context, ref, l10n.today, TimeFilter.daily, activeFilter),
-                        _buildFilterChip(context, ref, l10n.thisMonth, TimeFilter.monthly, activeFilter),
-                        _buildFilterChip(context, ref, l10n.sixMonths, TimeFilter.sixMonths, activeFilter),
-                        _buildFilterChip(context, ref, l10n.thisYear, TimeFilter.yearly, activeFilter),
-                      ],
-                    ),
+                  child: _buildAlignedFilterBar(
+                    context: context,
+                    ref: ref,
+                    l10n: l10n,
+                    activeFilter: activeFilter,
                   ),
                 ),
+
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -162,9 +99,9 @@ class DashboardScreen extends ConsumerWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
+                      children: < Widget >[
                         Text(
-                          l10n.transactions, // [INJEKSI LOKALISASI]
+                          l10n.transactions,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -172,7 +109,7 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          "- ${formatCurrency.format(totalExpense)}",
+                          '- ' + formatCurrency.format(totalExpense),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -190,7 +127,7 @@ class DashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(top: 40),
                       child: Center(
                         child: Text(
-                          l10n.noTransactions, // [INJEKSI LOKALISASI]
+                          l10n.noTransactions,
                           style: const TextStyle(
                             color: AppColors.greyText,
                             fontWeight: FontWeight.w500,
@@ -204,7 +141,7 @@ class DashboardScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) =>
+                        (BuildContext context, int index) =>
                             TransactionCard(expense: filteredExpenses[index]),
                         childCount: filteredExpenses.length,
                       ),
@@ -226,9 +163,12 @@ class DashboardScreen extends ConsumerWidget {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
+                children: < Widget >[
                   IconButton(
-                    icon: const Icon(Icons.home_filled, color: AppColors.white),
+                    icon: const Icon(
+                      Icons.home_filled,
+                      color: AppColors.white,
+                    ),
                     onPressed: () {},
                   ),
                   Container(
@@ -244,11 +184,12 @@ class DashboardScreen extends ConsumerWidget {
                         color: AppColors.primaryDark,
                       ),
                       onPressed: () {
-                        showModalBottomSheet(
+                        showModalBottomSheet< void >(
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
-                          builder: (context) => const InputBottomSheet(),
+                          builder: (BuildContext context) =>
+                              const InputBottomSheet(),
                         );
                       },
                     ),
@@ -261,7 +202,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute<void>(
+                        MaterialPageRoute< void >(
                           builder: (_) => const AnalyticsScreen(),
                         ),
                       );
@@ -276,20 +217,148 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterChip(
-    BuildContext context,
-    WidgetRef ref,
-    String label,
-    TimeFilter filter,
-    TimeFilter activeFilter,
-  ) {
-    final isActive = filter == activeFilter;
+  Widget _buildAlignedFilterBar({
+    required BuildContext context,
+    required WidgetRef ref,
+    required AppLocalizations l10n,
+    required TimeFilter activeFilter,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          const double calendarSize = 40.0;
+          const double gap = 8.0;
+          // Sisa ruang tepat untuk 3 chip utama (Today, This Month, 6 Months)
+          // agar tepi kanan "6 Months" jatuh persis di batas kanan kartu.
+          final double availableForThreeChips =
+              constraints.maxWidth - calendarSize - (gap * 3);
+
+          final double todayWidth = availableForThreeChips * 0.27;
+          final double thisMonthWidth = availableForThreeChips * 0.38;
+          final double sixMonthsWidth = availableForThreeChips * 0.35;
+          final double thisYearWidth = availableForThreeChips * 0.35;
+
+          final bool isCustomDate = activeFilter == TimeFilter.customDate;
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: < Widget >[
+                  GestureDetector(
+                    onTap: () async {
+                      final DateTime? date = await showDatePicker(
+                        context: context,
+                        initialDate:
+                            ref.read(customDateProvider) ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                        builder: (BuildContext context, Widget? child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: AppColors.primaryDark,
+                                onPrimary: AppColors.white,
+                                onSurface: AppColors.primaryDark,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (date != null) {
+                        ref.read(customDateProvider.notifier).setDate(date);
+                        ref
+                            .read(timeFilterProvider.notifier)
+                            .setFilter(TimeFilter.customDate);
+                      }
+                    },
+                    child: Container(
+                      width: calendarSize,
+                      height: calendarSize,
+                      decoration: BoxDecoration(
+                        color: isCustomDate
+                            ? AppColors.primaryDark
+                            : AppColors.white.withValues(alpha: 0.6),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isCustomDate
+                              ? Colors.transparent
+                              : AppColors.white,
+                          width: 1.5,
+                        ),
+                        boxShadow: isCustomDate ? AppColors.softShadow : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.calendar_month_rounded,
+                        size: 18,
+                        color: isCustomDate
+                            ? AppColors.white
+                            : AppColors.primaryLight,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    ref: ref,
+                    label: l10n.today,
+                    filter: TimeFilter.daily,
+                    activeFilter: activeFilter,
+                    width: todayWidth,
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    ref: ref,
+                    label: l10n.thisMonth,
+                    filter: TimeFilter.monthly,
+                    activeFilter: activeFilter,
+                    width: thisMonthWidth,
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    ref: ref,
+                    label: l10n.sixMonths,
+                    filter: TimeFilter.sixMonths,
+                    activeFilter: activeFilter,
+                    width: sixMonthsWidth,
+                  ),
+                  const SizedBox(width: gap),
+                  _buildFilterChip(
+                    ref: ref,
+                    label: l10n.thisYear,
+                    filter: TimeFilter.yearly,
+                    activeFilter: activeFilter,
+                    width: thisYearWidth,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required WidgetRef ref,
+    required String label,
+    required TimeFilter filter,
+    required TimeFilter activeFilter,
+    required double width,
+  }) {
+    final bool isActive = filter == activeFilter;
     return GestureDetector(
       onTap: () => ref.read(timeFilterProvider.notifier).setFilter(filter),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        width: width,
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive
               ? AppColors.primaryDark
@@ -301,12 +370,15 @@ class DashboardScreen extends ConsumerWidget {
           ),
           boxShadow: isActive ? AppColors.softShadow : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-            color: isActive ? AppColors.white : AppColors.primaryLight,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+              color: isActive ? AppColors.white : AppColors.primaryLight,
+            ),
           ),
         ),
       ),

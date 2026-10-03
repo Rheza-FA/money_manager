@@ -61,7 +61,7 @@
   "fullMonth": "Full Month",
   "@fullMonth": { "description": "Toggle button text for full month budgeting" },
 
-  "safeBudgetBiWeekly": "Safe budget for today based on current cycle",
+  "safeBudgetBiWeekly": "Safe budget for today based on the cycle",
   "@safeBudgetBiWeekly": { "description": "Footer context text for bi-weekly budget" },
 
   "safeBudgetMonthly": "Safe budget for today based on full month",
@@ -74,5 +74,129 @@
   "@tapToReveal": { "description": "Affordance text guiding the user to show their balance" },
 
   "tapToHide": "Tap to hide",
-  "@tapToHide": { "description": "Affordance text guiding the user to hide their balance" }
+  "@tapToHide": { "description": "Affordance text guiding the user to hide their balance" },
+
+  "analyticsByItem": "By Item",
+  "@analyticsByItem": { "description": "Toggle label to group analytics by item" },
+
+  "analyticsByCategory": "By Category",
+  "@analyticsByCategory": { "description": "Toggle label to group analytics by category" },
+
+  "analyticsTotalSpent": "TOTAL SPENT",
+  "@analyticsTotalSpent": { "description": "Header label inside the analytics donut chart" },
+
+  "analyticsNoActivity": "No activity",
+  "@analyticsNoActivity": { "description": "Badge label when there are no expenses" },
+
+  "analyticsSingleSource": "1 source",
+  "@analyticsSingleSource": { "description": "Badge label when there is 1 expense group" },
+
+  "analyticsMultipleSources": "{count} sources",
+  "@analyticsMultipleSources": {
+    "description": "Badge label showing total number of expense groups",
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+
+  "analyticsSpendingPace": "SPENDING PACE",
+  "@analyticsSpendingPace": { "description": "Header label for the spending pace card" },
+
+  "analyticsPacePrefix": "PACE • {date}",
+  "@analyticsPacePrefix": {
+    "description": "Header label showing pace for a selected date or period",
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+
+  "analyticsVsPrev": "{delta}% vs prev",
+  "@analyticsVsPrev": {
+    "description": "Comparison badge against previous period",
+    "placeholders": {
+      "delta": { "type": "String" }
+    }
+  },
+
+  "analyticsFullMonth": "Full Month",
+  "@analyticsFullMonth": { "description": "Badge label for full month mode in analytics" },
+
+  "analyticsBiWeekly": "14 Days",
+  "@analyticsBiWeekly": { "description": "Badge label for 14-day bi-weekly mode in analytics" },
+
+  "analyticsUnderSafeLimit": "{diff} under safe limit ({limit})",
+  "@analyticsUnderSafeLimit": {
+    "description": "Status line when spending is below the safe limit",
+    "placeholders": {
+      "diff": { "type": "String" },
+      "limit": { "type": "String" }
+    }
+  },
+
+  "analyticsOverSafeLimit": "{diff} over safe limit ({limit})",
+  "@analyticsOverSafeLimit": {
+    "description": "Status line when spending exceeds the safe limit",
+    "placeholders": {
+      "diff": { "type": "String" },
+      "limit": { "type": "String" }
+    }
+  },
+
+  "analyticsAvgPerDay": "Avg {amount}/day across active period",
+  "@analyticsAvgPerDay": {
+    "description": "Fallback status line showing average daily spending",
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+
+  "analyticsFilterToday": "Today",
+  "@analyticsFilterToday": { "description": "Analytics filter pill for today" },
+
+  "analyticsFilterThisMonth": "This Month",
+  "@analyticsFilterThisMonth": { "description": "Analytics filter pill for this month" },
+
+  "analyticsFilterSixMonths": "6 Months",
+  "@analyticsFilterSixMonths": { "description": "Analytics filter pill for six months" },
+
+  "analyticsTopItems": "Top Items",
+  "@analyticsTopItems": { "description": "Section title for item breakdown list" },
+
+  "analyticsCategories": "Categories",
+  "@analyticsCategories": { "description": "Section title for category breakdown list" },
+
+  "analyticsEmptyTitle": "No transactions found.",
+  "@analyticsEmptyTitle": { "description": "Empty state title in analytics breakdown" },
+
+  "analyticsEmptySubtitle": "Tap + below to add an expense or switch the time filter.",
+  "@analyticsEmptySubtitle": { "description": "Empty state subtitle in analytics breakdown" },
+
+  "analyticsDefaultExpenseName": "Expense",
+  "@analyticsDefaultExpenseName": { "description": "Default fallback title for unnamed expense" },
+
+  "analyticsCategoryFood": "Food & Meals",
+  "@analyticsCategoryFood": { "description": "Category label for food and meals" },
+
+  "analyticsCategoryDrinks": "Drinks & Coffee",
+  "@analyticsCategoryDrinks": { "description": "Category label for drinks and coffee" },
+
+  "analyticsCategoryTransport": "Transport",
+  "@analyticsCategoryTransport": { "description": "Category label for transportation" },
+
+  "analyticsCategoryBills": "Bills & Utilities",
+  "@analyticsCategoryBills": { "description": "Category label for bills and utilities" },
+
+  "analyticsCategoryOthers": "General & Others",
+  "@analyticsCategoryOthers": { "description": "Category label for general expenses" },
+
+  "analyticsTodayShort": "Today",
+  "@analyticsTodayShort": { "description": "Short bar label for today" },
+
+  "analyticsWeekShort": "W{number}",
+  "@analyticsWeekShort": {
+    "description": "Short bar label for week number",
+    "placeholders": {
+      "number": { "type": "String" }
+    }
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -17,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
   late final Animation<double> _fadeAnimation;
-  late final Animation<Offset> _slideAnimation;
+  late final Animation<double> _shiftAnimation;
 
   @override
   void initState() {
@@ -62,13 +63,16 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
+    // INTI SOLUSI: The Dynamic Anchor Shift
+    // Dimulai dari +40px (ke bawah) untuk mengunci logo di pusat geometris layar,
+    // lalu bergerak ke 0.0 untuk mengangkat keseluruhan komposisi ke pusat optikal yang seimbang.
+    _shiftAnimation = Tween<double>(
+      begin: 40.0, 
+      end: 0.0,    
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+        curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
       ),
     );
 
@@ -103,27 +107,33 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryDark, // Background #0A332B
+      backgroundColor: AppColors.primaryDark,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ScaleTransition(
-              scale: _scaleAnimation,
-              child: SizedBox(
-                // Ukuran canvas referensi: 200x200 (Bebas distorsi berkat koordinat relatif)
-                width: 200, 
-                height: 200,
-                child: CustomPaint(
-                  painter: _BreakoutMChartLogoPainter(),
+        // AnimatedBuilder mengendalikan translasi (pergeseran Y) pada keseluruhan grup
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (BuildContext context, Widget? child) {
+            return Transform.translate(
+              offset: Offset(0, _shiftAnimation.value),
+              child: child,
+            );
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Mengelompokkan elemen secara padat
+            children: <Widget>[
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: CustomPaint(
+                    painter: _BreakoutMChartLogoPainter(),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 28),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
+              const SizedBox(height: 32),
+              FadeTransition(
+                opacity: _fadeAnimation,
                 child: Column(
                   children: <Widget>[
                     Text(
@@ -148,8 +158,8 @@ class _SplashScreenState extends State<SplashScreen>
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -165,12 +175,10 @@ class _BreakoutMChartLogoPainter extends CustomPainter {
     final double coinRadius = s * 0.23; 
     final double strokeWidth = s * 0.045;
 
-    // 1. THE SOLID COIN
     final Paint coinPaint = Paint()
       ..color = AppColors.white
       ..style = PaintingStyle.fill;
       
-    // Soft shadow untuk elevasi UI modern
     canvas.drawShadow(
       Path()..addOval(Rect.fromCircle(center: center, radius: coinRadius)),
       Colors.black.withValues(alpha: 0.25),
@@ -179,8 +187,6 @@ class _BreakoutMChartLogoPainter extends CustomPainter {
     );
     canvas.drawCircle(center, coinRadius, coinPaint);
 
-    // 2. THE NEGATIVE-SPACE 'M' CHART
-    // Menggunakan warna background scaffold agar tampak bolong (ruang negatif)
     final Paint mPathPaint = Paint()
       ..color = AppColors.primaryDark 
       ..style = PaintingStyle.stroke
@@ -196,7 +202,6 @@ class _BreakoutMChartLogoPainter extends CustomPainter {
     
     canvas.drawPath(mPath, mPathPaint);
 
-    // 3. THE BREAKOUT ARROW
     final Paint arrowPaint = Paint()
       ..color = AppColors.accentGreen
       ..style = PaintingStyle.stroke

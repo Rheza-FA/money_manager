@@ -186,6 +186,18 @@
   "analyticsCategoryBills": "Bills & Utilities",
   "@analyticsCategoryBills": { "description": "Category label for bills and utilities" },
 
+  "analyticsCategoryHealth": "Fitness & Health",
+  "@analyticsCategoryHealth": { "description": "Category label for health, gym, and fitness" },
+
+  "analyticsCategoryShopping": "Shopping & Lifestyle",
+  "@analyticsCategoryShopping": { "description": "Category label for shopping, clothing, and lifestyle products" },
+
+  "analyticsCategoryEntertainment": "Entertainment & Hobbies",
+  "@analyticsCategoryEntertainment": { "description": "Category label for games, movies, and hobbies" },
+
+  "analyticsCategoryEducation": "Education & Work",
+  "@analyticsCategoryEducation": { "description": "Category label for school, courses, and work supplies" },
+
   "analyticsCategoryOthers": "General & Others",
   "@analyticsCategoryOthers": { "description": "Category label for general expenses" },
 

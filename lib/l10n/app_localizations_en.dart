@@ -176,6 +176,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyticsCategoryBills => 'Bills & Utilities';
 
   @override
+  String get analyticsCategoryHealth => 'Fitness & Health';
+
+  @override
+  String get analyticsCategoryShopping => 'Shopping & Lifestyle';
+
+  @override
+  String get analyticsCategoryEntertainment => 'Entertainment & Hobbies';
+
+  @override
+  String get analyticsCategoryEducation => 'Education & Work';
+
+  @override
   String get analyticsCategoryOthers => 'General & Others';
 
   @override

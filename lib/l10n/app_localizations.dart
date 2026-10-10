@@ -400,6 +400,30 @@ abstract class AppLocalizations {
   /// **'Bills & Utilities'**
   String get analyticsCategoryBills;
 
+  /// Category label for health, gym, and fitness
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness & Health'**
+  String get analyticsCategoryHealth;
+
+  /// Category label for shopping, clothing, and lifestyle products
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping & Lifestyle'**
+  String get analyticsCategoryShopping;
+
+  /// Category label for games, movies, and hobbies
+  ///
+  /// In en, this message translates to:
+  /// **'Entertainment & Hobbies'**
+  String get analyticsCategoryEntertainment;
+
+  /// Category label for school, courses, and work supplies
+  ///
+  /// In en, this message translates to:
+  /// **'Education & Work'**
+  String get analyticsCategoryEducation;
+
   /// Category label for general expenses
   ///
   /// In en, this message translates to:

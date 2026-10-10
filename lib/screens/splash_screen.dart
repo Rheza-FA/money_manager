@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -36,7 +35,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Melepaskan Native Splash agar transisi animasi ini berjalan
     FlutterNativeSplash.remove();
 
     _controller = AnimationController(
@@ -105,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: AppColors.primaryDark, // Background #0A332B
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -113,14 +111,15 @@ class _SplashScreenState extends State<SplashScreen>
             ScaleTransition(
               scale: _scaleAnimation,
               child: SizedBox(
-                width: 120, // Diperbesar sedikit agar presisi visualnya mantap
-                height: 120,
+                // Ukuran canvas referensi: 200x200 (Bebas distorsi berkat koordinat relatif)
+                width: 200, 
+                height: 200,
                 child: CustomPaint(
-                  painter: _AnalyticCoinLogoPainter(),
+                  painter: _BreakoutMChartLogoPainter(),
                 ),
               ),
             ),
-            const SizedBox(height: 36),
+            const SizedBox(height: 28),
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -157,59 +156,60 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// Identitas Visual: "The Analytic Coin"
-class _AnalyticCoinLogoPainter extends CustomPainter {
+/// Identitas Visual: "The Breakout M-Chart"
+class _BreakoutMChartLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final Offset center = Offset(size.width / 2, size.height / 2);
-    final double radius = size.width * 0.20;
-    final double strokeWidth = size.width * 0.085;
+    final double s = size.width;
+    final Offset center = Offset(s / 2, s / 2);
+    final double coinRadius = s * 0.23; 
+    final double strokeWidth = s * 0.045;
 
-    // 1. Busur Analitik (Mint)
-    final Paint arcPaint = Paint()
-      ..color = AppColors.accentGreen
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      0.0,
-      math.pi * 1.5,
-      false,
-      arcPaint,
-    );
-
-    // 2. Koin Kekayaan (White)
-    final Offset coinCenter = Offset(
-      center.dx + radius * math.cos(-math.pi / 4),
-      center.dy + radius * math.sin(-math.pi / 4),
-    );
-    final double coinRadius = size.width * 0.07;
-
-    canvas.drawShadow(
-      Path()..addOval(Rect.fromCircle(center: coinCenter, radius: coinRadius)),
-      Colors.black.withValues(alpha: 0.15),
-      8.0,
-      true,
-    );
-
+    // 1. THE SOLID COIN
     final Paint coinPaint = Paint()
       ..color = AppColors.white
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(coinCenter, coinRadius, coinPaint);
-
-    // 3. Percikan Pertumbuhan (Emerald)
-    final Offset sparkCenter = Offset(
-      center.dx + (radius * 1.35) * math.cos(-math.pi / 5.0),
-      center.dy + (radius * 1.35) * math.sin(-math.pi / 5.0),
+      
+    // Soft shadow untuk elevasi UI modern
+    canvas.drawShadow(
+      Path()..addOval(Rect.fromCircle(center: center, radius: coinRadius)),
+      Colors.black.withValues(alpha: 0.25),
+      12.0,
+      true,
     );
-    final double sparkRadius = size.width * 0.03;
+    canvas.drawCircle(center, coinRadius, coinPaint);
 
-    final Paint sparkPaint = Paint()
-      ..color = const Color(0xFF40916C) // Emerald Leaf
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(sparkCenter, sparkRadius, sparkPaint);
+    // 2. THE NEGATIVE-SPACE 'M' CHART
+    // Menggunakan warna background scaffold agar tampak bolong (ruang negatif)
+    final Paint mPathPaint = Paint()
+      ..color = AppColors.primaryDark 
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Path mPath = Path();
+    mPath.moveTo(s * 0.36, s * 0.60);
+    mPath.lineTo(s * 0.44, s * 0.44);
+    mPath.lineTo(s * 0.52, s * 0.54);
+    mPath.lineTo(s * 0.68, s * 0.32);
+    
+    canvas.drawPath(mPath, mPathPaint);
+
+    // 3. THE BREAKOUT ARROW
+    final Paint arrowPaint = Paint()
+      ..color = AppColors.accentGreen
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Path arrowPath = Path();
+    arrowPath.moveTo(s * 0.57, s * 0.32);
+    arrowPath.lineTo(s * 0.68, s * 0.32);
+    arrowPath.lineTo(s * 0.68, s * 0.43);
+
+    canvas.drawPath(arrowPath, arrowPaint);
   }
 
   @override

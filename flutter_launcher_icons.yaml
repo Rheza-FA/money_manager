@@ -2,7 +2,9 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "web/icons/app_icon_master.png"
-  # Menghapus channel transparansi secara paksa untuk mematuhi regulasi ketat Apple App Store
   remove_alpha_ios: true
-  # Menjamin ketersediaan icon fallback untuk perangkat Android generasi lama
+  
+  adaptive_icon_background: "#0A332B"
+  adaptive_icon_foreground: "web/icons/app_icon_master.png"
+  
   min_sdk_android: 21

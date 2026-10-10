@@ -123,8 +123,11 @@ class InteractiveDonutChart extends StatelessWidget {
                   },
                 ),
               ),
+              // KOREKSI MATEMATIS: 
+              // Lebar maks kotak dibatasi 136px (264 - 128) agar tidak berbenturan 
+              // dengan lengkungan dalam cincin chart yang berdiameter 168px.
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 42),
+                padding: const EdgeInsets.symmetric(horizontal: 64),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: Column(
@@ -133,17 +136,18 @@ class InteractiveDonutChart extends StatelessWidget {
                     children: < Widget >[
                       Text(
                         topLabel,
-                        maxLines: 1,
+                        maxLines: 2, // Mengizinkan pembungkusan teks pintar (smart wrap)
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
+                          letterSpacing: 0.8, // Dioptimalkan untuk menghemat ruang horizontal
+                          height: 1.15, // Line height dibuat rapat agar tidak memakan ruang vertikal
                           color: AppColors.greyText,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4), // Dikurangi dari 6px untuk keseimbangan vertikal
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Row(

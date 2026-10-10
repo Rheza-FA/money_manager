@@ -48,11 +48,19 @@ extension AnalyticsLocalizationBridge on AppLocalizations {
   String get analyticsEmptySubtitle =>
       'Tap + below to add an expense or switch the time filter.';
   String get analyticsDefaultExpenseName => 'Expense';
+  
+  // Base Categories
   String get analyticsCategoryFood => 'Food & Meals';
   String get analyticsCategoryDrinks => 'Drinks & Coffee';
   String get analyticsCategoryTransport => 'Transport';
   String get analyticsCategoryBills => 'Bills & Utilities';
+  // New Enhanced Categories
+  String get analyticsCategoryHealth => 'Fitness & Health';
+  String get analyticsCategoryShopping => 'Shopping & Lifestyle';
+  String get analyticsCategoryEntertainment => 'Entertainment & Hobbies';
+  String get analyticsCategoryEducation => 'Education & Work';
   String get analyticsCategoryOthers => 'General & Others';
+  
   String get analyticsTodayShort => 'Today';
   String analyticsWeekShort(String number) => 'W' + number;
   String analyticsPercentOfLimit(String percent) =>
@@ -75,13 +83,17 @@ class ForestTokens {
   static const Color pureWhite = AppColors.white;
   static const Color coralAlert = Color(0xFFE07A5F);
 
+  // Ditambahkan variasi warna agar cukup untuk 9 kategori
   static const List< Color > segmentPalette = < Color >[
     AppColors.primaryDark,
-    Color(0xFF40916C),
-    Color(0xFF84D696),
-    Color(0xFFD9A05B),
-    Color(0xFF2D6A4F),
-    Color(0xFFE07A5F),
+    Color(0xFF40916C), // Emerald Leaf
+    Color(0xFF84D696), // Soft Mint
+    Color(0xFFD9A05B), // Warm Amber Gold
+    Color(0xFF2D6A4F), // Pine Green
+    Color(0xFFE07A5F), // Terra Coral
+    Color(0xFF52796F), // Slate Sage
+    Color(0xFFE9C46A), // Sun Yellow
+    Color(0xFF264653), // Deep Ocean
   ];
 }
 
@@ -170,7 +182,6 @@ class AnalyticsSnapshot {
   double shareOf(double value) =>
       totalSpent > 0 ? (value / totalSpent) * 100 : 0.0;
 
-  /// Menggunakan Daily Limit yang sama persis dengan halaman pertama (maxDailySpendingProvider).
   double get effectiveSpendingLimit {
     if (dailyLimit <= 0) return 0.0;
     if (activeFilter == TimeFilter.daily ||
@@ -523,116 +534,96 @@ class AnalyticsEngine {
     return 1;
   }
 
+  /// THE DUAL-MATCHING ENGINE: 
+  /// Menggunakan metode klasifikasi berbasis Kata Eksak O(1) dan Fragmen String 
+  /// untuk akurasi luar biasa tanpa false-positives.
   static ({String name, IconData icon}) _classifyCategory(
     String rawTitle,
     AppLocalizations l10n,
   ) {
     final String lower = rawTitle.toLowerCase();
+    
+    // Pecah kalimat menjadi himpunan kata murni tanpa simbol untuk pencarian presisi
+    final Set<String> exactWords =
+        lower.split(RegExp(r'\W+')).where((String w) => w.isNotEmpty).toSet();
 
-    const List< String > foodKeywords = < String >[
-      'nasi',
-      'ayam',
-      'gorengan',
-      'mie',
-      'bakso',
-      'soto',
-      'makan',
-      'warteg',
-      'roti',
-      'snack',
-      'jajan',
-      'telur',
-      'ikan',
-      'sayur',
-      'sate',
-      'geprek',
-      'bubur',
-      'food',
-      'rice',
-      'chicken',
-    ];
-    for (final String kw in foodKeywords) {
-      if (lower.contains(kw)) {
-        return (
-          name: l10n.analyticsCategoryFood,
-          icon: Icons.restaurant_outlined,
-        );
+    // Fungsi utilitas: True jika string mengandung fragmen ATAU himpunan memiliki kata eksak
+    bool matches({List<String> partials = const [], List<String> exacts = const []}) {
+      for (final String p in partials) {
+        if (lower.contains(p)) return true;
       }
+      for (final String e in exacts) {
+        if (exactWords.contains(e)) return true;
+      }
+      return false;
     }
 
-    const List< String > drinkKeywords = < String >[
-      'kopi',
-      'es ',
-      'teh',
-      'jus',
-      'minum',
-      'cafe',
-      'kafe',
-      'boba',
-      'susu',
-      'air',
-      'coffee',
-      'tea',
-      'drink',
-    ];
-    for (final String kw in drinkKeywords) {
-      if (lower.contains(kw)) {
-        return (
-          name: l10n.analyticsCategoryDrinks,
-          icon: Icons.local_cafe_outlined,
-        );
-      }
+    // 1. FOOD & MEALS
+    if (matches(
+      partials: <String>['gofood', 'grabfood', 'shopeefood', 'kfc', 'mcd', 'warteg', 'burger', 'pizza', 'gorengan', 'martabak', 'seafood'],
+      exacts: <String>['nasi', 'ayam', 'mie', 'bakso', 'soto', 'makan', 'roti', 'snack', 'jajan', 'telur', 'ikan', 'sayur', 'sate', 'geprek', 'bubur', 'food', 'rice', 'chicken', 'daging', 'buah', 'kue'],
+    )) {
+      return (name: l10n.analyticsCategoryFood, icon: Icons.restaurant_outlined);
     }
 
-    const List< String > transportKeywords = < String >[
-      'bensin',
-      'pertalite',
-      'pertamax',
-      'parkir',
-      'gojek',
-      'grab',
-      'maxim',
-      'tol',
-      'servis',
-      'oli',
-      'fuel',
-      'gas',
-      'parking',
-    ];
-    for (final String kw in transportKeywords) {
-      if (lower.contains(kw)) {
-        return (
-          name: l10n.analyticsCategoryTransport,
-          icon: Icons.directions_car_outlined,
-        );
-      }
+    // 2. DRINKS & COFFEE
+    if (matches(
+      partials: <String>['starbucks', 'chatime', 'matcha', 'latte', 'boba', 'espresso', 'cappuccino'],
+      exacts: <String>['kopi', 'es', 'teh', 'jus', 'minum', 'cafe', 'kafe', 'susu', 'air', 'coffee', 'tea', 'drink'],
+    )) {
+      return (name: l10n.analyticsCategoryDrinks, icon: Icons.local_cafe_outlined);
     }
 
-    const List< String > billsKeywords = < String >[
-      'listrik',
-      'token',
-      'kuota',
-      'pulsa',
-      'wifi',
-      'kos',
-      'tagihan',
-      'bill',
-      'internet',
-      'rent',
-    ];
-    for (final String kw in billsKeywords) {
-      if (lower.contains(kw)) {
-        return (
-          name: l10n.analyticsCategoryBills,
-          icon: Icons.bolt_outlined,
-        );
-      }
+    // 3. TRANSPORT & TRAVEL
+    if (matches(
+      partials: <String>['pertalite', 'pertamax', 'transjakarta', 'pesawat', 'bengkel', 'tambal', 'gojek', 'grabcar', 'grabbike'],
+      exacts: <String>['bensin', 'parkir', 'grab', 'maxim', 'tol', 'servis', 'oli', 'fuel', 'gas', 'parking', 'tiket', 'kereta', 'krl', 'mrt', 'busway', 'travel', 'motor', 'mobil', 'ojek', 'transport'],
+    )) {
+      return (name: l10n.analyticsCategoryTransport, icon: Icons.directions_car_outlined);
     }
 
-    return (
-      name: l10n.analyticsCategoryOthers,
-      icon: Icons.receipt_long_outlined,
-    );
+    // 4. FITNESS & HEALTH (Mengisolasi 'gym', 'whey', 'member', dll)
+    if (matches(
+      partials: <String>['suplemen', 'creatine', 'apotek', 'rumah sakit', 'klinik', 'vitamin', 'membership', 'member gym', 'kesehatan'],
+      exacts: <String>['gym', 'fitness', 'workout', 'whey', 'obat', 'dokter', 'rs', 'sehat', 'member', 'protein', 'sepeda', 'lari'],
+    )) {
+      return (name: l10n.analyticsCategoryHealth, icon: Icons.fitness_center_outlined);
+    }
+
+    // 5. SHOPPING & LIFESTYLE
+    if (matches(
+      partials: <String>['skincare', 'pomade', 'conditioner', 'tokopedia', 'lazada', 'minimarket', 'indomaret', 'alfamart', 'belanja', 'shopee', 'supermarket', 'sea salt', 'hair styling'],
+      exacts: <String>['baju', 'celana', 'sepatu', 'kaos', 'jaket', 'tas', 'parfum', 'sabun', 'sampo', 'odol', 'sikat', 'mall', 'kebutuhan', 'pasar', 'kado', 'hadiah', 'sea', 'salt'],
+    )) {
+      return (name: l10n.analyticsCategoryShopping, icon: Icons.shopping_bag_outlined);
+    }
+
+    // 6. ENTERTAINMENT & HOBBIES
+    if (matches(
+      partials: <String>['netflix', 'spotify', 'mobile legends', 'valorant', 'jujutsu', 'kaisen', 'subscription', 'bioskop', 'nonton', 'dragon ball', 'lootify', 'subnautica', 'dandadan'],
+      exacts: <String>['game', 'topup', 'steam', 'roblox', 'ml', 'pubg', 'manga', 'komik', 'anime', 'cgv', 'xxi', 'main', 'hobi', 'mainan'],
+    )) {
+      return (name: l10n.analyticsCategoryEntertainment, icon: Icons.sports_esports_outlined);
+    }
+
+    // 7. EDUCATION & WORK
+    if (matches(
+      partials: <String>['fotokopi', 'sertifikat', 'stationery', 'laravel', 'flutter', 'udemy'],
+      exacts: <String>['buku', 'print', 'spp', 'kuliah', 'ukt', 'kursus', 'sekolah', 'pulpen', 'kertas', 'kerja', 'belajar'],
+    )) {
+      return (name: l10n.analyticsCategoryEducation, icon: Icons.school_outlined);
+    }
+
+    // 8. BILLS & UTILITIES
+    if (matches(
+      partials: <String>['indihome', 'telkomsel', 'indosat', 'smartfren', 'asuransi', 'langganan'],
+      exacts: <String>['listrik', 'token', 'kuota', 'pulsa', 'wifi', 'kos', 'tagihan', 'bill', 'internet', 'rent', 'pdam', 'xl', 'tri', 'bpjs', 'cicilan', 'pajak', 'kosan'],
+    )) {
+      return (name: l10n.analyticsCategoryBills, icon: Icons.bolt_outlined);
+    }
+
+    // FALLBACK
+    return (name: l10n.analyticsCategoryOthers, icon: Icons.category_outlined);
   }
 
   static String _formatTitleCase(String text, AppLocalizations l10n) {
@@ -671,18 +662,7 @@ class IdrFormatter {
 
   static String shortDate(DateTime dt) {
     const List< String > months = < String >[
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     final String d = dt.day.toString().padLeft(2, '0');
     final String m = months[dt.month - 1];

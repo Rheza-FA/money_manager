@@ -1,7 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:google_fonts/google_fonts.dart'; // INJEKSI FONT
+import 'package:google_fonts/google_fonts.dart';
 import 'package:money_manager/theme/app_colors.dart';
 import 'package:money_manager/screens/dashboard_screen.dart';
 
@@ -35,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Mencabut layar native secara mulus saat UI Flutter siap
+    // Melepaskan Native Splash agar transisi animasi ini berjalan
     FlutterNativeSplash.remove();
 
     _controller = AnimationController(
@@ -112,14 +113,14 @@ class _SplashScreenState extends State<SplashScreen>
             ScaleTransition(
               scale: _scaleAnimation,
               child: SizedBox(
-                width: 110,
-                height: 110,
+                width: 120, // Diperbesar sedikit agar presisi visualnya mantap
+                height: 120,
                 child: CustomPaint(
-                  painter: _BrandLogoPainter(),
+                  painter: _AnalyticCoinLogoPainter(),
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -156,44 +157,59 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-class _BrandLogoPainter extends CustomPainter {
+/// Identitas Visual: "The Analytic Coin"
+class _AnalyticCoinLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // KOREKSI SIMETRIS ABSOLUT (Diubah dari 0.40/0.60 menjadi 0.36/0.64 yang seimbang)
-    final double radius = size.width * 0.32;
-    final Offset centerLeft = Offset(size.width * 0.36, size.height / 2);
-    final Offset centerRight = Offset(size.width * 0.64, size.height / 2);
+    final Offset center = Offset(size.width / 2, size.height / 2);
+    final double radius = size.width * 0.20;
+    final double strokeWidth = size.width * 0.085;
 
-    final Paint leftPaint = Paint()
+    // 1. Busur Analitik (Mint)
+    final Paint arcPaint = Paint()
       ..color = AppColors.accentGreen
-      ..style = PaintingStyle.fill;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = strokeWidth;
 
-    // Menggunakan alpha blending murni tanpa kliping agar bentuk tetap simetris
-    final Paint rightPaint = Paint()
-      ..color = AppColors.white.withValues(alpha: 0.85)
-      ..style = PaintingStyle.fill;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      0.0,
+      math.pi * 1.5,
+      false,
+      arcPaint,
+    );
+
+    // 2. Koin Kekayaan (White)
+    final Offset coinCenter = Offset(
+      center.dx + radius * math.cos(-math.pi / 4),
+      center.dy + radius * math.sin(-math.pi / 4),
+    );
+    final double coinRadius = size.width * 0.07;
 
     canvas.drawShadow(
-      Path()
-        ..addOval(Rect.fromCircle(center: centerLeft, radius: radius))
-        ..addOval(Rect.fromCircle(center: centerRight, radius: radius)),
-      Colors.black.withValues(alpha: 0.25),
-      12.0,
+      Path()..addOval(Rect.fromCircle(center: coinCenter, radius: coinRadius)),
+      Colors.black.withValues(alpha: 0.15),
+      8.0,
       true,
     );
 
-    // Menggambar lingkaran kiri dan kanan secara utuh
-    canvas.drawCircle(centerLeft, radius, leftPaint);
-    canvas.drawCircle(centerRight, radius, rightPaint);
-
-    final Paint dotPaint = Paint()
-      ..color = AppColors.primaryDark
+    final Paint coinPaint = Paint()
+      ..color = AppColors.white
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height / 2),
-      radius * 0.28,
-      dotPaint,
+    canvas.drawCircle(coinCenter, coinRadius, coinPaint);
+
+    // 3. Percikan Pertumbuhan (Emerald)
+    final Offset sparkCenter = Offset(
+      center.dx + (radius * 1.35) * math.cos(-math.pi / 5.0),
+      center.dy + (radius * 1.35) * math.sin(-math.pi / 5.0),
     );
+    final double sparkRadius = size.width * 0.03;
+
+    final Paint sparkPaint = Paint()
+      ..color = const Color(0xFF40916C) // Emerald Leaf
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(sparkCenter, sparkRadius, sparkPaint);
   }
 
   @override

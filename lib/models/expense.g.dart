@@ -18,11 +18,17 @@ const ExpenseSchema = CollectionSchema(
   id: -4604318666888508206,
   properties: {
     r'date': PropertySchema(id: 0, name: r'date', type: IsarType.dateTime),
-    r'name': PropertySchema(id: 1, name: r'name', type: IsarType.string),
-    r'price': PropertySchema(id: 2, name: r'price', type: IsarType.double),
-    r'quantity': PropertySchema(id: 3, name: r'quantity', type: IsarType.long),
+    r'isIncome': PropertySchema(id: 1, name: r'isIncome', type: IsarType.bool),
+    r'name': PropertySchema(id: 2, name: r'name', type: IsarType.string),
+    r'price': PropertySchema(id: 3, name: r'price', type: IsarType.double),
+    r'quantity': PropertySchema(id: 4, name: r'quantity', type: IsarType.long),
+    r'recordedAt': PropertySchema(
+      id: 5,
+      name: r'recordedAt',
+      type: IsarType.dateTime,
+    ),
     r'totalAmount': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'totalAmount',
       type: IsarType.double,
     ),
@@ -74,10 +80,12 @@ void _expenseSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.date);
-  writer.writeString(offsets[1], object.name);
-  writer.writeDouble(offsets[2], object.price);
-  writer.writeLong(offsets[3], object.quantity);
-  writer.writeDouble(offsets[4], object.totalAmount);
+  writer.writeBool(offsets[1], object.isIncome);
+  writer.writeString(offsets[2], object.name);
+  writer.writeDouble(offsets[3], object.price);
+  writer.writeLong(offsets[4], object.quantity);
+  writer.writeDateTime(offsets[5], object.recordedAt);
+  writer.writeDouble(offsets[6], object.totalAmount);
 }
 
 Expense _expenseDeserialize(
@@ -89,10 +97,12 @@ Expense _expenseDeserialize(
   final object = Expense();
   object.date = reader.readDateTime(offsets[0]);
   object.id = id;
-  object.name = reader.readString(offsets[1]);
-  object.price = reader.readDouble(offsets[2]);
-  object.quantity = reader.readLong(offsets[3]);
-  object.totalAmount = reader.readDouble(offsets[4]);
+  object.isIncome = reader.readBool(offsets[1]);
+  object.name = reader.readString(offsets[2]);
+  object.price = reader.readDouble(offsets[3]);
+  object.quantity = reader.readLong(offsets[4]);
+  object.recordedAt = reader.readDateTimeOrNull(offsets[5]);
+  object.totalAmount = reader.readDouble(offsets[6]);
   return object;
 }
 
@@ -106,12 +116,16 @@ P _expenseDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 2:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 3:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 4:
+      return (reader.readLong(offset)) as P;
+    case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -437,6 +451,16 @@ extension ExpenseQueryFilter
     });
   }
 
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> isIncomeEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'isIncome', value: value),
+      );
+    });
+  }
+
   QueryBuilder<Expense, Expense, QAfterFilterCondition> nameEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -716,6 +740,81 @@ extension ExpenseQueryFilter
     });
   }
 
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> recordedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNull(property: r'recordedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> recordedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const FilterCondition.isNotNull(property: r'recordedAt'),
+      );
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> recordedAtEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'recordedAt', value: value),
+      );
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> recordedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'recordedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> recordedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'recordedAt',
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterFilterCondition> recordedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'recordedAt',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<Expense, Expense, QAfterFilterCondition> totalAmountEqualTo(
     double value, {
     double epsilon = Query.epsilon,
@@ -810,6 +909,18 @@ extension ExpenseQuerySortBy on QueryBuilder<Expense, Expense, QSortBy> {
     });
   }
 
+  QueryBuilder<Expense, Expense, QAfterSortBy> sortByIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterSortBy> sortByIsIncomeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.desc);
+    });
+  }
+
   QueryBuilder<Expense, Expense, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -843,6 +954,18 @@ extension ExpenseQuerySortBy on QueryBuilder<Expense, Expense, QSortBy> {
   QueryBuilder<Expense, Expense, QAfterSortBy> sortByQuantityDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'quantity', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterSortBy> sortByRecordedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recordedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterSortBy> sortByRecordedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recordedAt', Sort.desc);
     });
   }
 
@@ -885,6 +1008,18 @@ extension ExpenseQuerySortThenBy
     });
   }
 
+  QueryBuilder<Expense, Expense, QAfterSortBy> thenByIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterSortBy> thenByIsIncomeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isIncome', Sort.desc);
+    });
+  }
+
   QueryBuilder<Expense, Expense, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -921,6 +1056,18 @@ extension ExpenseQuerySortThenBy
     });
   }
 
+  QueryBuilder<Expense, Expense, QAfterSortBy> thenByRecordedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recordedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QAfterSortBy> thenByRecordedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recordedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Expense, Expense, QAfterSortBy> thenByTotalAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'totalAmount', Sort.asc);
@@ -942,6 +1089,12 @@ extension ExpenseQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Expense, Expense, QDistinct> distinctByIsIncome() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isIncome');
+    });
+  }
+
   QueryBuilder<Expense, Expense, QDistinct> distinctByName({
     bool caseSensitive = true,
   }) {
@@ -959,6 +1112,12 @@ extension ExpenseQueryWhereDistinct
   QueryBuilder<Expense, Expense, QDistinct> distinctByQuantity() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'quantity');
+    });
+  }
+
+  QueryBuilder<Expense, Expense, QDistinct> distinctByRecordedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'recordedAt');
     });
   }
 
@@ -983,6 +1142,12 @@ extension ExpenseQueryProperty
     });
   }
 
+  QueryBuilder<Expense, bool, QQueryOperations> isIncomeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isIncome');
+    });
+  }
+
   QueryBuilder<Expense, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
@@ -998,6 +1163,12 @@ extension ExpenseQueryProperty
   QueryBuilder<Expense, int, QQueryOperations> quantityProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'quantity');
+    });
+  }
+
+  QueryBuilder<Expense, DateTime?, QQueryOperations> recordedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'recordedAt');
     });
   }
 

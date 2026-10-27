@@ -67,7 +67,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
     final TimeFilter activeFilter = ref.watch(timeFilterProvider);
     final DateTime? customDate = ref.watch(customDateProvider);
     final List< Expense > filteredExpenses =
-        ref.watch(filteredExpensesProvider);
+        ref.watch(filteredSpendingProvider);
     final double totalExpense = ref.watch(filteredTotalExpenseProvider);
 
     final AsyncValue< List< Expense > > expensesAsync =

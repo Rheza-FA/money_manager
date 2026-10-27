@@ -218,10 +218,16 @@ class AnalyticsEngine {
     final DateTime anchor = customDate ?? now;
     final bool isBiWeekly = settings?.isBiWeeklyMode ?? false;
 
+    final List< Expense > allSpending =
+        allExpenses.where((Expense e) => !e.isIncome).toList(growable: false);
+    final List< Expense > filteredSpending = filteredExpenses
+        .where((Expense e) => !e.isIncome)
+        .toList(growable: false);
+
     int totalQty = 0;
     final Set< int > uniqueDayKeys = < int >{};
 
-    for (final Expense e in filteredExpenses) {
+    for (final Expense e in filteredSpending) {
       totalQty += _extractQty(e);
       uniqueDayKeys.add(e.date.year * 10000 + e.date.month * 100 + e.date.day);
     }
@@ -229,18 +235,18 @@ class AnalyticsEngine {
     final int elapsedDays = _resolveElapsedDays(filter, anchor);
 
     final List< AllocationSlice > itemSlices = _buildSlices(
-      filteredExpenses,
+      filteredSpending,
       byCategory: false,
       l10n: l10n,
     );
     final List< AllocationSlice > categorySlices = _buildSlices(
-      filteredExpenses,
+      filteredSpending,
       byCategory: true,
       l10n: l10n,
     );
 
     final List< PaceBarPoint > paceSeries = _buildPaceSeries(
-      allExpenses: allExpenses,
+      allExpenses: allSpending,
       filter: filter,
       anchor: anchor,
       dailyLimit: exactDailyLimit,
@@ -253,7 +259,7 @@ class AnalyticsEngine {
       totalSpent: totalFilteredExpense,
       dailyLimit: exactDailyLimit,
       isBiWeeklyMode: isBiWeekly,
-      transactionCount: filteredExpenses.length,
+      transactionCount: filteredSpending.length,
       totalQuantity: totalQty,
       activeDays: elapsedDays,
       distinctSpendingDays: math.max(1, uniqueDayKeys.length),

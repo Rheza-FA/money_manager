@@ -454,6 +454,108 @@ abstract class AppLocalizations {
   /// **'Limit {amount}'**
   String analyticsLimitBenchmark(String amount);
 
+  /// Bottom sheet title when importing a shared payment receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Import Receipt'**
+  String get sharedReceiptTitle;
+
+  /// Loading title while OCR extracts receipt details
+  ///
+  /// In en, this message translates to:
+  /// **'Reading receipt...'**
+  String get sharedReceiptScanningTitle;
+
+  /// Loading subtitle explaining private on-device extraction
+  ///
+  /// In en, this message translates to:
+  /// **'Extracting merchant, amount, and date on-device'**
+  String get sharedReceiptScanningSubtitle;
+
+  /// Primary button to save imported receipt into transactions
+  ///
+  /// In en, this message translates to:
+  /// **'Save Transaction'**
+  String get sharedReceiptSaveButton;
+
+  /// Helper message when part of a receipt could not be parsed automatically
+  ///
+  /// In en, this message translates to:
+  /// **'Verify any missing details before saving.'**
+  String get sharedReceiptVerifyHint;
+
+  /// Hint shown when a shared receipt was detected as incoming funds
+  ///
+  /// In en, this message translates to:
+  /// **'Detected as incoming money — it will be added to your balance.'**
+  String get sharedReceiptIncomingHint;
+
+  /// Segment label marking a transaction as money spent
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get transactionTypeExpense;
+
+  /// Segment label marking a transaction as money received
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get transactionTypeIncome;
+
+  /// Secondary line on a transaction card for incoming money
+  ///
+  /// In en, this message translates to:
+  /// **'Money in'**
+  String get transactionIncomeSubtitle;
+
+  /// Daily limit card progress label showing today's spending
+  ///
+  /// In en, this message translates to:
+  /// **'Spent today {amount}'**
+  String dailySpentToday(String amount);
+
+  /// Daily limit card label showing how much of today's limit remains
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} left'**
+  String dailyLeftToday(String amount);
+
+  /// Daily limit card label showing how far today's spending exceeds the limit
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} over'**
+  String dailyOverToday(String amount);
+
+  /// Helper text under the monthly balance input explaining automatic updates
+  ///
+  /// In en, this message translates to:
+  /// **'Updates automatically as expenses and incoming transfers are recorded.'**
+  String get balanceInputHint;
+
+  /// Toggle label to inspect extracted raw receipt lines
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt text'**
+  String get sharedReceiptViewRaw;
+
+  /// Label for one-tap item name suggestions from receipt
+  ///
+  /// In en, this message translates to:
+  /// **'Quick name'**
+  String get sharedReceiptSuggestions;
+
+  /// Label showing computed total expense amount to be saved
+  ///
+  /// In en, this message translates to:
+  /// **'Total to record'**
+  String get sharedReceiptTotalLabel;
+
+  /// Fallback message when shared file cannot be decoded
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read that file automatically. You can still enter the transaction below.'**
+  String get sharedReceiptReadError;
+
   /// Fallback label when spending limit is not set
   ///
   /// In en, this message translates to:

@@ -228,6 +228,72 @@
     }
   },
 
+  "sharedReceiptTitle": "Import Receipt",
+  "@sharedReceiptTitle": { "description": "Bottom sheet title when importing a shared payment receipt" },
+
+  "sharedReceiptScanningTitle": "Reading receipt...",
+  "@sharedReceiptScanningTitle": { "description": "Loading title while OCR extracts receipt details" },
+
+  "sharedReceiptScanningSubtitle": "Extracting merchant, amount, and date on-device",
+  "@sharedReceiptScanningSubtitle": { "description": "Loading subtitle explaining private on-device extraction" },
+
+  "sharedReceiptSaveButton": "Save Transaction",
+  "@sharedReceiptSaveButton": { "description": "Primary button to save imported receipt into transactions" },
+
+  "sharedReceiptVerifyHint": "Verify any missing details before saving.",
+  "@sharedReceiptVerifyHint": { "description": "Helper message when part of a receipt could not be parsed automatically" },
+
+  "sharedReceiptIncomingHint": "Detected as incoming money — it will be added to your balance.",
+  "@sharedReceiptIncomingHint": { "description": "Hint shown when a shared receipt was detected as incoming funds" },
+
+  "transactionTypeExpense": "Expense",
+  "@transactionTypeExpense": { "description": "Segment label marking a transaction as money spent" },
+
+  "transactionTypeIncome": "Income",
+  "@transactionTypeIncome": { "description": "Segment label marking a transaction as money received" },
+
+  "transactionIncomeSubtitle": "Money in",
+  "@transactionIncomeSubtitle": { "description": "Secondary line on a transaction card for incoming money" },
+
+  "dailySpentToday": "Spent today {amount}",
+  "@dailySpentToday": {
+    "description": "Daily limit card progress label showing today's spending",
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+
+  "dailyLeftToday": "{amount} left",
+  "@dailyLeftToday": {
+    "description": "Daily limit card label showing how much of today's limit remains",
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+
+  "dailyOverToday": "{amount} over",
+  "@dailyOverToday": {
+    "description": "Daily limit card label showing how far today's spending exceeds the limit",
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+
+  "balanceInputHint": "Updates automatically as expenses and incoming transfers are recorded.",
+  "@balanceInputHint": { "description": "Helper text under the monthly balance input explaining automatic updates" },
+
+  "sharedReceiptViewRaw": "Receipt text",
+  "@sharedReceiptViewRaw": { "description": "Toggle label to inspect extracted raw receipt lines" },
+
+  "sharedReceiptSuggestions": "Quick name",
+  "@sharedReceiptSuggestions": { "description": "Label for one-tap item name suggestions from receipt" },
+
+  "sharedReceiptTotalLabel": "Total to record",
+  "@sharedReceiptTotalLabel": { "description": "Label showing computed total expense amount to be saved" },
+
+  "sharedReceiptReadError": "Couldn't read that file automatically. You can still enter the transaction below.",
+  "@sharedReceiptReadError": { "description": "Fallback message when shared file cannot be decoded" },
+
   "analyticsPercentOfTotal": "{percent}% of total spent",
   "@analyticsPercentOfTotal": {
     "description": "Fallback label when spending limit is not set",

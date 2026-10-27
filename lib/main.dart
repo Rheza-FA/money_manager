@@ -16,6 +16,7 @@ import 'models/monthly_balance.dart';
 import 'providers/database_provider.dart';
 import 'models/app_settings.dart';
 import 'screens/splash_screen.dart';
+import 'features/receipt_share/services/receipt_share_service.dart';
 
 void main() async {
   // 1. Ambil instance WidgetsBinding
@@ -51,6 +52,7 @@ class MoneyManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Neymo',
+      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         AppLocalizations.delegate,

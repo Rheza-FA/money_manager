@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../l10n/app_localizations.dart';
+import '../models/expense.dart';
 import '../theme/app_colors.dart';
 import '../widgets/balance_overview_circle.dart';
 import '../widgets/daily_limit_card.dart';
@@ -11,22 +13,71 @@ import '../providers/calculator_provider.dart';
 import '../providers/history_provider.dart';
 import '../widgets/input_bottom_sheet.dart';
 import '../features/analytics/screens/analytics_screen.dart';
+import '../features/receipt_share/models/shared_receipt.dart';
+import '../features/receipt_share/services/receipt_share_service.dart';
+import '../features/receipt_share/widgets/shared_receipt_sheet.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _isShareSheetOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(receiptShareProvider.notifier).attachWhenReady();
+    });
+  }
+
+  void _presentSharedReceiptSheet() {
+    if (_isShareSheetOpen || !mounted) return;
+    final BuildContext modalContext =
+        appNavigatorKey.currentContext ?? context;
+    _isShareSheetOpen = true;
+    HapticFeedback.lightImpact();
+
+    showModalBottomSheet<void>(
+      context: modalContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const SharedReceiptSheet(),
+    ).whenComplete(() {
+      _isShareSheetOpen = false;
+      if (mounted) {
+        ref.read(receiptShareProvider.notifier).clear();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<ReceiptShareState>(
+      receiptShareProvider,
+      (ReceiptShareState? previous, ReceiptShareState next) {
+        final int prevSession = previous?.sessionId ?? 0;
+        if (next.isActive && next.sessionId != prevSession) {
+          _presentSharedReceiptSheet();
+        }
+      },
+    );
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
-    final AsyncValue< dynamic > balanceAsync =
+    final AsyncValue<dynamic> balanceAsync =
         ref.watch(currentMonthBalanceProvider);
+    final double liveBalance = ref.watch(liveBalanceProvider);
     final double maxDailySpending = ref.watch(maxDailySpendingProvider);
 
     final TimeFilter activeFilter = ref.watch(timeFilterProvider);
-    final List< dynamic > filteredExpenses =
-        ref.watch(filteredExpensesProvider);
+    final List<Expense> filteredExpenses = ref.watch(filteredExpensesProvider);
     final double totalExpense = ref.watch(filteredTotalExpenseProvider);
+    final double totalIncome = ref.watch(filteredTotalIncomeProvider);
 
     final NumberFormat formatCurrency = NumberFormat.currency(
       locale: 'id_ID',
@@ -37,7 +88,7 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundTop,
       body: Stack(
-        children: < Widget >[
+        children: <Widget>[
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -51,11 +102,11 @@ class DashboardScreen extends ConsumerWidget {
             bottom: false,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
-              slivers: < Widget >[
+              slivers: <Widget>[
                 SliverToBoxAdapter(
                   child: balanceAsync.when(
-                    data: (dynamic balanceData) => BalanceOverviewCircle(
-                      balance: (balanceData?.balance as double?) ?? 0.0,
+                    data: (_) => BalanceOverviewCircle(
+                      balance: liveBalance,
                     ),
                     loading: () => const SizedBox(
                       height: 300,
@@ -69,7 +120,7 @@ class DashboardScreen extends ConsumerWidget {
                       height: 300,
                       child: Center(
                         child: Text(
-                          'Error: ' + e.toString(),
+                          'Error: $e',
                           style: const TextStyle(color: AppColors.primaryDark),
                         ),
                       ),
@@ -99,7 +150,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: < Widget >[
+                      children: <Widget>[
                         Text(
                           l10n.transactions,
                           style: const TextStyle(
@@ -108,12 +159,12 @@ class DashboardScreen extends ConsumerWidget {
                             color: AppColors.primaryDark,
                           ),
                         ),
-                        Text(
-                          '- ' + formatCurrency.format(totalExpense),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.greyText,
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: _buildCashflowSummary(
+                            formatCurrency: formatCurrency,
+                            totalExpense: totalExpense,
+                            totalIncome: totalIncome,
                           ),
                         ),
                       ],
@@ -163,7 +214,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: < Widget >[
+                children: <Widget>[
                   IconButton(
                     icon: const Icon(
                       Icons.home_filled,
@@ -184,7 +235,7 @@ class DashboardScreen extends ConsumerWidget {
                         color: AppColors.primaryDark,
                       ),
                       onPressed: () {
-                        showModalBottomSheet< void >(
+                        showModalBottomSheet<void>(
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -195,14 +246,14 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Analitik & Laporan',
+                    tooltip: 'Analytics',
                     icon: const Icon(
                       Icons.pie_chart_rounded,
                       color: AppColors.greyText,
                     ),
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute< void >(
+                        MaterialPageRoute<void>(
                           builder: (_) => const AnalyticsScreen(),
                         ),
                       );
@@ -213,6 +264,73 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCashflowSummary({
+    required NumberFormat formatCurrency,
+    required double totalExpense,
+    required double totalIncome,
+  }) {
+    if (totalIncome <= 0) {
+      return Text(
+        '- ${formatCurrency.format(totalExpense)}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.greyText,
+        ),
+      );
+    }
+
+    if (totalExpense <= 0) {
+      return Text(
+        '+ ${formatCurrency.format(totalIncome)}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.incomeEmerald,
+        ),
+      );
+    }
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: RichText(
+        text: TextSpan(
+          children: <TextSpan>[
+            TextSpan(
+              text: '+ ${formatCurrency.format(totalIncome)}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.incomeEmerald,
+              ),
+            ),
+            const TextSpan(
+              text: '  •  ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.greyText,
+              ),
+            ),
+            TextSpan(
+              text: '- ${formatCurrency.format(totalExpense)}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.greyText,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -229,8 +347,6 @@ class DashboardScreen extends ConsumerWidget {
         builder: (BuildContext context, BoxConstraints constraints) {
           const double calendarSize = 40.0;
           const double gap = 8.0;
-          // Sisa ruang tepat untuk 3 chip utama (Today, This Month, 6 Months)
-          // agar tepi kanan "6 Months" jatuh persis di batas kanan kartu.
           final double availableForThreeChips =
               constraints.maxWidth - calendarSize - (gap * 3);
 
@@ -247,7 +363,7 @@ class DashboardScreen extends ConsumerWidget {
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
-                children: < Widget >[
+                children: <Widget>[
                   GestureDetector(
                     onTap: () async {
                       final DateTime? date = await showDatePicker(

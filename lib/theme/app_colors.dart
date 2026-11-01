@@ -7,6 +7,9 @@ class AppColors {
   static const Color primaryLight = Color(0xFF0A4740);
   static const Color accentGreen = Color(0xFF8DC985);
   static const Color incomeEmerald = Color(0xFF237A3B);
+  static const Color dangerSurface = Color(0xFFFCEAE6);
+  static const Color dangerBorder = Color(0xFFF3CFC8);
+  static const Color dangerCrimson = Color(0xFFD6493E);
   static const Color white = Color(0xFFFFFFFF);
   static const Color greyText = Color(0xFF7A908C);
 

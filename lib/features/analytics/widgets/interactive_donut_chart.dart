@@ -5,10 +5,10 @@ import 'package:money_manager/theme/app_colors.dart';
 import '../models/analytics_models.dart';
 
 class InteractiveDonutChart extends StatelessWidget {
-  final List< AllocationSlice > slices;
+  final List<AllocationSlice> slices;
   final double totalSpent;
   final String? selectedSliceId;
-  final ValueChanged< String? > onSliceSelected;
+  final ValueChanged<String?> onSliceSelected;
 
   const InteractiveDonutChart({
     super.key,
@@ -78,7 +78,7 @@ class InteractiveDonutChart extends StatelessWidget {
     if (activeSlice != null && totalSpent > 0) {
       final String pct =
           ((activeSlice.amount / totalSpent) * 100).toStringAsFixed(1);
-      pillText = pct + '% • ' + activeSlice.totalQuantity.toString() + 'x';
+      pillText = '$pct% • ${activeSlice.totalQuantity}x';
     } else if (hasData) {
       pillText = slices.length == 1
           ? l10n.analyticsSingleSource
@@ -101,26 +101,28 @@ class InteractiveDonutChart extends StatelessWidget {
           ),
           child: Stack(
             alignment: Alignment.center,
-            children: < Widget >[
-              SizedBox(
-                width: _ringSize,
-                height: _ringSize,
-                child: TweenAnimationBuilder< double >(
-                  tween: Tween< double >(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 650),
-                  curve: Curves.easeOutCubic,
-                  builder: (BuildContext context, double progress, _) {
-                    return CustomPaint(
-                      painter: _RingAllocationPainter(
-                        slices: slices,
-                        total: totalSpent,
-                        selectedSliceId: selectedSliceId,
-                        progress: progress,
-                        baseStroke: _baseStroke,
-                        activeStroke: _activeStroke,
-                      ),
-                    );
-                  },
+            children: <Widget>[
+              RepaintBoundary(
+                child: SizedBox(
+                  width: _ringSize,
+                  height: _ringSize,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 650),
+                    curve: Curves.easeOutCubic,
+                    builder: (BuildContext context, double progress, _) {
+                      return CustomPaint(
+                        painter: _RingAllocationPainter(
+                          slices: slices,
+                          total: totalSpent,
+                          selectedSliceId: selectedSliceId,
+                          progress: progress,
+                          baseStroke: _baseStroke,
+                          activeStroke: _activeStroke,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               // KOREKSI MATEMATIS: 
@@ -131,9 +133,9 @@ class InteractiveDonutChart extends StatelessWidget {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: Column(
-                    key: ValueKey< String >(activeSlice?.id ?? 'summary_center'),
+                    key: ValueKey<String>(activeSlice?.id ?? 'summary_center'),
                     mainAxisSize: MainAxisSize.min,
-                    children: < Widget >[
+                    children: <Widget>[
                       Text(
                         topLabel,
                         maxLines: 2, // Mengizinkan pembungkusan teks pintar (smart wrap)
@@ -154,7 +156,7 @@ class InteractiveDonutChart extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.baseline,
                           textBaseline: TextBaseline.alphabetic,
-                          children: < Widget >[
+                          children: <Widget>[
                             const Text(
                               'Rp ',
                               style: TextStyle(
@@ -208,7 +210,7 @@ class InteractiveDonutChart extends StatelessWidget {
 }
 
 class _RingAllocationPainter extends CustomPainter {
-  final List< AllocationSlice > slices;
+  final List<AllocationSlice> slices;
   final double total;
   final String? selectedSliceId;
   final double progress;

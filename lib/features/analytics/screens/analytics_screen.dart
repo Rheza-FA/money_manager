@@ -8,22 +8,32 @@ import 'package:money_manager/providers/database_provider.dart';
 import 'package:money_manager/providers/history_provider.dart';
 import 'package:money_manager/theme/app_colors.dart';
 import 'package:money_manager/widgets/input_bottom_sheet.dart';
+import 'package:money_manager/widgets/tactile_press.dart';
 import '../models/analytics_models.dart';
 import '../widgets/cashflow_comparison_chart.dart';
 import '../widgets/interactive_donut_chart.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
-  const AnalyticsScreen({super.key});
+  final bool embedded;
+
+  const AnalyticsScreen({
+    super.key,
+    this.embedded = false,
+  });
 
   @override
-  ConsumerState< AnalyticsScreen > createState() => _AnalyticsScreenState();
+  ConsumerState<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
+class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
+    with AutomaticKeepAliveClientMixin {
   BreakdownMode _breakdownMode = BreakdownMode.byItem;
   String? _selectedSliceId;
 
-  Future< void > _selectCustomDate() async {
+  @override
+  bool get wantKeepAlive => widget.embedded;
+
+  Future<void> _selectCustomDate() async {
     final DateTime? date = await showDatePicker(
       context: context,
       initialDate: ref.read(customDateProvider) ?? DateTime.now(),
@@ -51,7 +61,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
   }
 
   void _openAddExpenseSheet() {
-    showModalBottomSheet< void >(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -61,22 +71,40 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
+    ref.listen<TimeFilter>(
+      timeFilterProvider,
+      (TimeFilter? previous, TimeFilter next) {
+        if (previous != next && _selectedSliceId != null) {
+          setState(() => _selectedSliceId = null);
+        }
+      },
+    );
+    ref.listen<DateTime?>(
+      customDateProvider,
+      (DateTime? previous, DateTime? next) {
+        if (previous != next && _selectedSliceId != null) {
+          setState(() => _selectedSliceId = null);
+        }
+      },
+    );
+
     final AppLocalizations l10n = AppLocalizations.of(context)!;
 
     final double maxDailySpending = ref.watch(maxDailySpendingProvider);
     final TimeFilter activeFilter = ref.watch(timeFilterProvider);
     final DateTime? customDate = ref.watch(customDateProvider);
-    final List< Expense > filteredExpenses =
-        ref.watch(filteredSpendingProvider);
+    final List<Expense> filteredExpenses = ref.watch(filteredSpendingProvider);
     final double totalExpense = ref.watch(filteredTotalExpenseProvider);
 
-    final AsyncValue< List< Expense > > expensesAsync =
+    final AsyncValue<List<Expense>> expensesAsync =
         ref.watch(expenseListProvider);
-    final AsyncValue< AppSettings? > settingsAsync =
+    final AsyncValue<AppSettings?> settingsAsync =
         ref.watch(appSettingsProvider);
 
-    final List< Expense > allExpenses =
-        expensesAsync.hasValue ? expensesAsync.value! : const < Expense >[];
+    final List<Expense> allExpenses =
+        expensesAsync.hasValue ? expensesAsync.value! : const <Expense>[];
     final AppSettings? settings =
         settingsAsync.hasValue ? settingsAsync.value : null;
 
@@ -91,14 +119,168 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
       l10n: l10n,
     );
 
-    final List< AllocationSlice > activeSlices =
+    final List<AllocationSlice> activeSlices =
         snapshot.slicesFor(_breakdownMode);
     final double activeLimit = snapshot.effectiveSpendingLimit;
+    final String? effectiveSelectedSliceId = (_selectedSliceId != null &&
+            activeSlices.any((AllocationSlice s) => s.id == _selectedSliceId))
+        ? _selectedSliceId
+        : null;
+
+    final Widget scrollViewport = SafeArea(
+      bottom: false,
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: <Widget>[
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // 1. Mode Switcher (By Item | By Category)
+          SliverToBoxAdapter(
+            child: Center(
+              child: _BreakdownModePill(
+                selected: _breakdownMode,
+                l10n: l10n,
+                onChanged: (BreakdownMode mode) {
+                  setState(() {
+                    _breakdownMode = mode;
+                    _selectedSliceId = null;
+                  });
+                },
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 18)),
+
+          // 2. Interactive Donut Pedestal
+          SliverToBoxAdapter(
+            child: InteractiveDonutChart(
+              slices: activeSlices,
+              totalSpent: snapshot.totalSpent,
+              selectedSliceId: effectiveSelectedSliceId,
+              onSliceSelected: (String? id) {
+                setState(() => _selectedSliceId = id);
+              },
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+          // 3. ForestPaceHeroCard (100% Identik DailyLimitCard)
+          SliverToBoxAdapter(
+            child: ForestPaceHeroCard(
+              snapshot: snapshot,
+              onToggleSpendingMode: () {
+                ref
+                    .read(databaseServiceProvider)
+                    .toggleSpendingMode(!snapshot.isBiWeeklyMode);
+              },
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+
+          // 4. Filter Row yang rata sempurna dengan batas kiri & kanan kartu (horizontal: 24)
+          SliverToBoxAdapter(
+            child: _buildAlignedFilterBar(
+              l10n: l10n,
+              activeFilter: activeFilter,
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+          // 5. Section Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Text(
+                    _breakdownMode == BreakdownMode.byItem
+                        ? l10n.analyticsTopItems
+                        : l10n.analyticsCategories,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                  Text(
+                    '- ${IdrFormatter.format(totalExpense)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.greyText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // 6. Daftar Kartu Rincian dengan Horizontal Limit Chart
+          if (activeSlices.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Center(
+                  child: Text(
+                    l10n.noTransactions,
+                    style: const TextStyle(
+                      color: AppColors.greyText,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (BuildContext context, int index) {
+                    final AllocationSlice slice = activeSlices[index];
+                    final double limitShare =
+                        snapshot.limitShareOf(slice.amount);
+                    final bool isSelected =
+                        effectiveSelectedSliceId == slice.id;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _NativeBreakdownCard(
+                        slice: slice,
+                        limitSharePercentage: limitShare,
+                        effectiveLimit: activeLimit,
+                        l10n: l10n,
+                        isSelected: isSelected,
+                        isDimmed:
+                            effectiveSelectedSliceId != null && !isSelected,
+                        onTap: () {
+                          setState(() {
+                            _selectedSliceId = isSelected ? null : slice.id;
+                          });
+                        },
+                      ),
+                    );
+                  },
+                  childCount: activeSlices.length,
+                ),
+              ),
+            ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        ],
+      ),
+    );
+
+    if (widget.embedded) {
+      return scrollViewport;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundTop,
       body: Stack(
-        children: < Widget >[
+        children: <Widget>[
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -108,152 +290,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
               ),
             ),
           ),
-          SafeArea(
-            bottom: false,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: < Widget >[
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                // 1. Mode Switcher (By Item | By Category)
-                SliverToBoxAdapter(
-                  child: Center(
-                    child: _BreakdownModePill(
-                      selected: _breakdownMode,
-                      l10n: l10n,
-                      onChanged: (BreakdownMode mode) {
-                        setState(() {
-                          _breakdownMode = mode;
-                          _selectedSliceId = null;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 18)),
-
-                // 2. Interactive Donut Pedestal
-                SliverToBoxAdapter(
-                  child: InteractiveDonutChart(
-                    slices: activeSlices,
-                    totalSpent: snapshot.totalSpent,
-                    selectedSliceId: _selectedSliceId,
-                    onSliceSelected: (String? id) {
-                      setState(() => _selectedSliceId = id);
-                    },
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-                // 3. ForestPaceHeroCard (100% Identik DailyLimitCard)
-                SliverToBoxAdapter(
-                  child: ForestPaceHeroCard(
-                    snapshot: snapshot,
-                    onToggleSpendingMode: () {
-                      ref
-                          .read(databaseServiceProvider)
-                          .toggleSpendingMode(!snapshot.isBiWeeklyMode);
-                    },
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 40)),
-
-                // 4. Filter Row yang rata sempurna dengan batas kiri & kanan kartu (horizontal: 24)
-                SliverToBoxAdapter(
-                  child: _buildAlignedFilterBar(
-                    l10n: l10n,
-                    activeFilter: activeFilter,
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                // 5. Section Header
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: < Widget >[
-                        Text(
-                          _breakdownMode == BreakdownMode.byItem
-                              ? l10n.analyticsTopItems
-                              : l10n.analyticsCategories,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                        Text(
-                          '- ' + IdrFormatter.format(totalExpense),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.greyText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-                // 6. Daftar Kartu Rincian dengan Horizontal Limit Chart
-                if (activeSlices.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: Center(
-                        child: Text(
-                          l10n.noTransactions,
-                          style: const TextStyle(
-                            color: AppColors.greyText,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (BuildContext context, int index) {
-                          final AllocationSlice slice = activeSlices[index];
-                          final double limitShare =
-                              snapshot.limitShareOf(slice.amount);
-                          final bool isSelected =
-                              _selectedSliceId == slice.id;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _NativeBreakdownCard(
-                              slice: slice,
-                              limitSharePercentage: limitShare,
-                              effectiveLimit: activeLimit,
-                              l10n: l10n,
-                              isSelected: isSelected,
-                              isDimmed:
-                                  _selectedSliceId != null && !isSelected,
-                              onTap: () {
-                                setState(() {
-                                  _selectedSliceId =
-                                      isSelected ? null : slice.id;
-                                });
-                              },
-                            ),
-                          );
-                        },
-                        childCount: activeSlices.length,
-                      ),
-                    ),
-                  ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              ],
-            ),
-          ),
+          scrollViewport,
 
           // 7. Bottom Navigation Bar
           Align(
@@ -268,35 +305,41 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: < Widget >[
-                  IconButton(
-                    icon: const Icon(
-                      Icons.home_filled,
-                      color: AppColors.greyText,
-                    ),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: const BoxDecoration(
-                      color: AppColors.white,
-                      shape: BoxShape.circle,
-                    ),
+                children: <Widget>[
+                  TactilePress(
                     child: IconButton(
                       icon: const Icon(
-                        Icons.add_rounded,
-                        color: AppColors.primaryDark,
+                        Icons.home_filled,
+                        color: AppColors.greyText,
                       ),
-                      onPressed: _openAddExpenseSheet,
+                      onPressed: () => Navigator.of(context).maybePop(),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.pie_chart_rounded,
-                      color: AppColors.white,
+                  TactilePress(
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.add_rounded,
+                          color: AppColors.primaryDark,
+                        ),
+                        onPressed: _openAddExpenseSheet,
+                      ),
                     ),
-                    onPressed: () {},
+                  ),
+                  TactilePress(
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.pie_chart_rounded,
+                        color: AppColors.white,
+                      ),
+                      onPressed: () {},
+                    ),
                   ),
                 ],
               ),
@@ -333,8 +376,8 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
-                children: < Widget >[
-                  GestureDetector(
+                children: <Widget>[
+                  TactileTap(
                     onTap: _selectCustomDate,
                     child: Container(
                       width: calendarSize,
@@ -406,7 +449,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
     required double width,
   }) {
     final bool isActive = filter == activeFilter;
-    return GestureDetector(
+    return TactileTap(
       onTap: () {
         ref.read(timeFilterProvider.notifier).setFilter(filter);
         setState(() => _selectedSliceId = null);
@@ -447,7 +490,7 @@ class _AnalyticsScreenState extends ConsumerState< AnalyticsScreen > {
 class _BreakdownModePill extends StatelessWidget {
   final BreakdownMode selected;
   final AppLocalizations l10n;
-  final ValueChanged< BreakdownMode > onChanged;
+  final ValueChanged<BreakdownMode> onChanged;
 
   const _BreakdownModePill({
     required this.selected,
@@ -468,7 +511,7 @@ class _BreakdownModePill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: BreakdownMode.values.map((BreakdownMode mode) {
           final bool isActive = mode == selected;
-          return GestureDetector(
+          return TactileTap(
             onTap: () => onChanged(mode),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
@@ -537,7 +580,7 @@ class _NativeBreakdownCard extends StatelessWidget {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 180),
       opacity: isDimmed ? 0.45 : 1.0,
-      child: GestureDetector(
+      child: TactileTap(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
@@ -553,9 +596,9 @@ class _NativeBreakdownCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: < Widget >[
+            children: <Widget>[
               Row(
-                children: < Widget >[
+                children: <Widget>[
                   Container(
                     width: 48,
                     height: 48,
@@ -573,7 +616,7 @@ class _NativeBreakdownCard extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: < Widget >[
+                      children: <Widget>[
                         Text(
                           slice.title,
                           maxLines: 1,
@@ -586,9 +629,7 @@ class _NativeBreakdownCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          slice.totalQuantity.toString() +
-                              'x Rp ' +
-                              IdrFormatter.numberOnly(slice.unitPrice),
+                          '${slice.totalQuantity}x Rp ${IdrFormatter.numberOnly(slice.unitPrice)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -603,7 +644,7 @@ class _NativeBreakdownCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: < Widget >[
+                    children: <Widget>[
                       Text(
                         IdrFormatter.format(slice.amount),
                         style: const TextStyle(
@@ -626,74 +667,89 @@ class _NativeBreakdownCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  final double maxBarWidth = constraints.maxWidth;
-                  return TweenAnimationBuilder< double >(
-                    tween: Tween< double >(begin: 0.0, end: clampedFactor),
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeOutCubic,
-                    builder: (BuildContext context, double factor, _) {
-                      return Container(
-                        width: maxBarWidth,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: ForestTokens.canvasMint,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          width: maxBarWidth * factor,
+              RepaintBoundary(
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double maxBarWidth = constraints.maxWidth;
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: clampedFactor),
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeOutCubic,
+                      builder: (BuildContext context, double factor, _) {
+                        return Container(
+                          width: maxBarWidth,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: activeBarColor,
+                            color: ForestTokens.canvasMint,
                             borderRadius: BorderRadius.circular(99),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            width: maxBarWidth * factor,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: activeBarColor,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 7),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: < Widget >[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: < Widget >[
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: activeBarColor,
-                          shape: BoxShape.circle,
+                children: <Widget>[
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: activeBarColor,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        leftCaption,
-                        style: TextStyle(
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            leftCaption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                              color: isOverLimit
+                                  ? ForestTokens.coralAlert
+                                  : AppColors.greyText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasLimit) ...<Widget>[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        l10n.analyticsLimitBenchmark(
+                          IdrFormatter.format(effectiveLimit),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
-                          color: isOverLimit
-                              ? ForestTokens.coralAlert
-                              : AppColors.greyText,
+                          color: AppColors.greyText,
                         ),
                       ),
-                    ],
-                  ),
-                  if (hasLimit)
-                    Text(
-                      l10n.analyticsLimitBenchmark(
-                        IdrFormatter.format(effectiveLimit),
-                      ),
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.greyText,
-                      ),
                     ),
+                  ],
                 ],
               ),
             ],

@@ -6,12 +6,20 @@ import io.flutter.embedding.engine.FlutterEngine
 
 class MainActivity : FlutterActivity() {
     private var receiptShareChannel: ReceiptShareChannel? = null
+    private var tactileHapticChannel: TactileHapticChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+
+        tactileHapticChannel = TactileHapticChannel(
+            context = applicationContext,
+            messenger = messenger,
+        )
+
         val channel = ReceiptShareChannel(
             appCacheDir = applicationContext.cacheDir,
-            messenger = flutterEngine.dartExecutor.binaryMessenger,
+            messenger = messenger,
         )
         receiptShareChannel = channel
         channel.drainPendingShare()
@@ -29,6 +37,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        tactileHapticChannel?.dispose()
+        tactileHapticChannel = null
         receiptShareChannel?.dispose()
         receiptShareChannel = null
         super.cleanUpFlutterEngine(flutterEngine)

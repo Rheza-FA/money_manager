@@ -7,7 +7,7 @@ part of 'monthly_balance.dart';
 // **************************************************************************
 
 // coverage:ignore-file
-// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types, experimental_member_use
 
 extension GetMonthlyBalanceCollection on Isar {
   IsarCollection<MonthlyBalance> get monthlyBalances => this.collection();
@@ -17,17 +17,14 @@ const MonthlyBalanceSchema = CollectionSchema(
   name: r'MonthlyBalance',
   id: 2857008909591354516,
   properties: {
-    r'balance': PropertySchema(
-      id: 0,
-      name: r'balance',
-      type: IsarType.double,
-    ),
+    r'balance': PropertySchema(id: 0, name: r'balance', type: IsarType.double),
     r'monthYear': PropertySchema(
       id: 1,
       name: r'monthYear',
       type: IsarType.string,
-    )
+    ),
   },
+
   estimateSize: _monthlyBalanceEstimateSize,
   serialize: _monthlyBalanceSerialize,
   deserialize: _monthlyBalanceDeserialize,
@@ -44,16 +41,17 @@ const MonthlyBalanceSchema = CollectionSchema(
           name: r'monthYear',
           type: IndexType.hash,
           caseSensitive: true,
-        )
+        ),
       ],
-    )
+    ),
   },
   links: {},
   embeddedSchemas: {},
+
   getId: _monthlyBalanceGetId,
   getLinks: _monthlyBalanceGetLinks,
   attach: _monthlyBalanceAttach,
-  version: '3.1.0+1',
+  version: '3.4.1',
 );
 
 int _monthlyBalanceEstimateSize(
@@ -114,7 +112,10 @@ List<IsarLinkBase<dynamic>> _monthlyBalanceGetLinks(MonthlyBalance object) {
 }
 
 void _monthlyBalanceAttach(
-    IsarCollection<dynamic> col, Id id, MonthlyBalance object) {
+  IsarCollection<dynamic> col,
+  Id id,
+  MonthlyBalance object,
+) {
   object.id = id;
 }
 
@@ -136,7 +137,8 @@ extension MonthlyBalanceByIndex on IsarCollection<MonthlyBalance> {
   }
 
   Future<List<MonthlyBalance?>> getAllByMonthYear(
-      List<String> monthYearValues) {
+    List<String> monthYearValues,
+  ) {
     final values = monthYearValues.map((e) => [e]).toList();
     return getAllByIndex(r'monthYear', values);
   }
@@ -168,8 +170,10 @@ extension MonthlyBalanceByIndex on IsarCollection<MonthlyBalance> {
     return putAllByIndex(r'monthYear', objects);
   }
 
-  List<Id> putAllByMonthYearSync(List<MonthlyBalance> objects,
-      {bool saveLinks = true}) {
+  List<Id> putAllByMonthYearSync(
+    List<MonthlyBalance> objects, {
+    bool saveLinks = true,
+  }) {
     return putAllByIndexSync(r'monthYear', objects, saveLinks: saveLinks);
   }
 }
@@ -186,17 +190,16 @@ extension MonthlyBalanceQueryWhereSort
 extension MonthlyBalanceQueryWhere
     on QueryBuilder<MonthlyBalance, MonthlyBalance, QWhereClause> {
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterWhereClause> idEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterWhereClause> idNotEqualTo(
-      Id id) {
+    Id id,
+  ) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -219,8 +222,9 @@ extension MonthlyBalanceQueryWhere
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterWhereClause> idGreaterThan(
-      Id id,
-      {bool include = false}) {
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -229,8 +233,9 @@ extension MonthlyBalanceQueryWhere
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterWhereClause> idLessThan(
-      Id id,
-      {bool include = false}) {
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -245,56 +250,65 @@ extension MonthlyBalanceQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterWhereClause>
-      monthYearEqualTo(String monthYear) {
+  monthYearEqualTo(String monthYear) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'monthYear',
-        value: [monthYear],
-      ));
+      return query.addWhereClause(
+        IndexWhereClause.equalTo(indexName: r'monthYear', value: [monthYear]),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterWhereClause>
-      monthYearNotEqualTo(String monthYear) {
+  monthYearNotEqualTo(String monthYear) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'monthYear',
-              lower: [],
-              upper: [monthYear],
-              includeUpper: false,
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'monthYear',
-              lower: [monthYear],
-              includeLower: false,
-              upper: [],
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'monthYear',
+                lower: [],
+                upper: [monthYear],
+                includeUpper: false,
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'monthYear',
+                lower: [monthYear],
+                includeLower: false,
+                upper: [],
+              ),
+            );
       } else {
         return query
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'monthYear',
-              lower: [monthYear],
-              includeLower: false,
-              upper: [],
-            ))
-            .addWhereClause(IndexWhereClause.between(
-              indexName: r'monthYear',
-              lower: [],
-              upper: [monthYear],
-              includeUpper: false,
-            ));
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'monthYear',
+                lower: [monthYear],
+                includeLower: false,
+                upper: [],
+              ),
+            )
+            .addWhereClause(
+              IndexWhereClause.between(
+                indexName: r'monthYear',
+                lower: [],
+                upper: [monthYear],
+                includeUpper: false,
+              ),
+            );
       }
     });
   }
@@ -303,53 +317,59 @@ extension MonthlyBalanceQueryWhere
 extension MonthlyBalanceQueryFilter
     on QueryBuilder<MonthlyBalance, MonthlyBalance, QFilterCondition> {
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      balanceEqualTo(
-    double value, {
-    double epsilon = Query.epsilon,
-  }) {
+  balanceEqualTo(double value, {double epsilon = Query.epsilon}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'balance',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'balance',
+          value: value,
+
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      balanceGreaterThan(
-    double value, {
-    bool include = false,
-    double epsilon = Query.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'balance',
-        value: value,
-        epsilon: epsilon,
-      ));
-    });
-  }
-
-  QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      balanceLessThan(
+  balanceGreaterThan(
     double value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'balance',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'balance',
+          value: value,
+
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      balanceBetween(
+  balanceLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'balance',
+          value: value,
+
+          epsilon: epsilon,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
+  balanceBetween(
     double lower,
     double upper, {
     bool includeLower = true,
@@ -357,52 +377,53 @@ extension MonthlyBalanceQueryFilter
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'balance',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'balance',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+
+          epsilon: epsilon,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      idGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
+  idGreaterThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      idLessThan(
-    Id value, {
-    bool include = false,
-  }) {
+  idLessThan(Id value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -413,64 +434,69 @@ extension MonthlyBalanceQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  monthYearEqualTo(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'monthYear',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'monthYear',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'monthYear',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearLessThan(
+  monthYearGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'monthYear',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'monthYear',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearBetween(
+  monthYearLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'monthYear',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
+  monthYearBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -478,84 +504,86 @@ extension MonthlyBalanceQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'monthYear',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'monthYear',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  monthYearStartsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'monthYear',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'monthYear',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  monthYearEndsWith(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'monthYear',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'monthYear',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearContains(String value, {bool caseSensitive = true}) {
+  monthYearContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'monthYear',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'monthYear',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearMatches(String pattern, {bool caseSensitive = true}) {
+  monthYearMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'monthYear',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'monthYear',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearIsEmpty() {
+  monthYearIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'monthYear',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'monthYear', value: ''),
+      );
     });
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterFilterCondition>
-      monthYearIsNotEmpty() {
+  monthYearIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'monthYear',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'monthYear', value: ''),
+      );
     });
   }
 }
@@ -575,7 +603,7 @@ extension MonthlyBalanceQuerySortBy
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterSortBy>
-      sortByBalanceDesc() {
+  sortByBalanceDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'balance', Sort.desc);
     });
@@ -588,7 +616,7 @@ extension MonthlyBalanceQuerySortBy
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterSortBy>
-      sortByMonthYearDesc() {
+  sortByMonthYearDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'monthYear', Sort.desc);
     });
@@ -604,7 +632,7 @@ extension MonthlyBalanceQuerySortThenBy
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterSortBy>
-      thenByBalanceDesc() {
+  thenByBalanceDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'balance', Sort.desc);
     });
@@ -629,7 +657,7 @@ extension MonthlyBalanceQuerySortThenBy
   }
 
   QueryBuilder<MonthlyBalance, MonthlyBalance, QAfterSortBy>
-      thenByMonthYearDesc() {
+  thenByMonthYearDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'monthYear', Sort.desc);
     });
@@ -644,8 +672,9 @@ extension MonthlyBalanceQueryWhereDistinct
     });
   }
 
-  QueryBuilder<MonthlyBalance, MonthlyBalance, QDistinct> distinctByMonthYear(
-      {bool caseSensitive = true}) {
+  QueryBuilder<MonthlyBalance, MonthlyBalance, QDistinct> distinctByMonthYear({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'monthYear', caseSensitive: caseSensitive);
     });

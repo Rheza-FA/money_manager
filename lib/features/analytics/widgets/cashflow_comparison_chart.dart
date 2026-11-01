@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:money_manager/l10n/app_localizations.dart';
 import 'package:money_manager/theme/app_colors.dart';
+import 'package:money_manager/widgets/tactile_press.dart';
 import '../models/analytics_models.dart';
 
 class ForestPaceHeroCard extends StatefulWidget {
@@ -16,10 +16,10 @@ class ForestPaceHeroCard extends StatefulWidget {
   });
 
   @override
-  State< ForestPaceHeroCard > createState() => _ForestPaceHeroCardState();
+  State<ForestPaceHeroCard> createState() => _ForestPaceHeroCardState();
 }
 
-class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
+class _ForestPaceHeroCardState extends State<ForestPaceHeroCard> {
   late int _selectedIndex;
   ScrollPosition? _scrollPosition;
 
@@ -52,7 +52,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
   }
 
   int _resolveInitialIndex() {
-    final List< PaceBarPoint > series = widget.snapshot.paceSeries;
+    final List<PaceBarPoint> series = widget.snapshot.paceSeries;
     if (series.isEmpty) return -1;
     for (int i = series.length - 1; i >= 0; i--) {
       if (series[i].isCurrent || series[i].spent > 0) return i;
@@ -63,7 +63,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context)!;
-    final List< PaceBarPoint > series = widget.snapshot.paceSeries;
+    final List<PaceBarPoint> series = widget.snapshot.paceSeries;
     final PaceBarPoint? activePoint =
         (_selectedIndex >= 0 && _selectedIndex < series.length)
             ? series[_selectedIndex]
@@ -97,7 +97,8 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       child: AnimatedBuilder(
-        animation: _scrollPosition ?? const AlwaysStoppedAnimation< double >(0.0),
+        animation:
+            _scrollPosition ?? const AlwaysStoppedAnimation<double>(0.0),
         builder: (BuildContext context, Widget? child) {
           final double offset = _scrollPosition?.pixels ?? 0.0;
           final double translateY = (offset * 0.10).clamp(-15.0, 15.0);
@@ -110,7 +111,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(32),
-            boxShadow: < BoxShadow >[
+            boxShadow: <BoxShadow>[
               BoxShadow(
                 color: AppColors.primaryDark.withValues(alpha: 0.12),
                 blurRadius: 30,
@@ -125,42 +126,45 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
               color: AppColors.primaryDark,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: < Widget >[
+                children: <Widget>[
                   // 1. Baris Header: Warna, Ketebalan, & Intensitas 100% Identik DailyLimitCard
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
-                    children: < Widget >[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: < Widget >[
-                          const Icon(
-                            Icons.monetization_on_rounded,
-                            color: AppColors.accentGreen,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            activePoint != null
-                                ? l10n.analyticsPacePrefix(
-                                    activePoint.contextTitle.toUpperCase(),
-                                  )
-                                : l10n.analyticsSpendingPace,
-                            style: TextStyle(
-                              color: AppColors.white.withValues(alpha: 0.9),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
-                              letterSpacing: 1.2,
+                    children: <Widget>[
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(
+                              Icons.monetization_on_rounded,
+                              color: AppColors.accentGreen,
+                              size: 16,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                activePoint != null
+                                    ? l10n.analyticsPacePrefix(
+                                        activePoint.contextTitle.toUpperCase(),
+                                      )
+                                    : l10n.analyticsSpendingPace,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: AppColors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          widget.onToggleSpendingMode?.call();
-                        },
-                        behavior: HitTestBehavior.opaque,
+                      const SizedBox(width: 8),
+                      TactileTap(
+                        onTap: widget.onToggleSpendingMode,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -176,7 +180,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: < Widget >[
+                            children: <Widget>[
                               Icon(
                                 isBiWeekly
                                     ? Icons.view_week_rounded
@@ -208,7 +212,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                   RichText(
                     text: TextSpan(
                       style: const TextStyle(),
-                      children: < InlineSpan >[
+                      children: <InlineSpan>[
                         TextSpan(
                           text: 'Rp ',
                           style: TextStyle(
@@ -261,7 +265,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
     );
   }
 
-  Widget _buildInteractiveBars(List< PaceBarPoint > series, double benchmark) {
+  Widget _buildInteractiveBars(List<PaceBarPoint> series, double benchmark) {
     double maxVal = 0.0;
     for (final PaceBarPoint pt in series) {
       maxVal = math.max(maxVal, math.max(pt.spent, pt.safeLimit));
@@ -281,7 +285,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
 
           return Stack(
             clipBehavior: Clip.none,
-            children: < Widget >[
+            children: <Widget>[
               if (benchmark > 0)
                 Positioned(
                   top: limitTop,
@@ -296,7 +300,7 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                 ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: List< Widget >.generate(series.length, (int idx) {
+                children: List<Widget>.generate(series.length, (int idx) {
                   final PaceBarPoint pt = series[idx];
                   final bool isSelected = idx == _selectedIndex;
                   final double heightFactor = pt.spent > 0
@@ -320,12 +324,11 @@ class _ForestPaceHeroCardState extends State< ForestPaceHeroCard > {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
-                        HapticFeedback.selectionClick();
                         setState(() => _selectedIndex = idx);
                       },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: < Widget >[
+                        children: <Widget>[
                           SizedBox(
                             height: barZoneHeight,
                             child: Align(

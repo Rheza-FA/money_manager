@@ -209,6 +209,68 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get sharedReceiptTitle => 'Import Receipt';
+
+  @override
+  String get sharedReceiptScanningTitle => 'Reading receipt...';
+
+  @override
+  String get sharedReceiptScanningSubtitle =>
+      'Extracting merchant, amount, and date on-device';
+
+  @override
+  String get sharedReceiptSaveButton => 'Save Transaction';
+
+  @override
+  String get sharedReceiptVerifyHint =>
+      'Verify any missing details before saving.';
+
+  @override
+  String get sharedReceiptIncomingHint =>
+      'Detected as incoming money — it will be added to your balance.';
+
+  @override
+  String get transactionTypeExpense => 'Expense';
+
+  @override
+  String get transactionTypeIncome => 'Income';
+
+  @override
+  String get transactionIncomeSubtitle => 'Money in';
+
+  @override
+  String dailySpentToday(String amount) {
+    return 'Spent today $amount';
+  }
+
+  @override
+  String dailyLeftToday(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String dailyOverToday(String amount) {
+    return '$amount over';
+  }
+
+  @override
+  String get balanceInputHint =>
+      'Updates automatically as expenses and incoming transfers are recorded.';
+
+  @override
+  String get sharedReceiptViewRaw => 'Receipt text';
+
+  @override
+  String get sharedReceiptSuggestions => 'Quick name';
+
+  @override
+  String get sharedReceiptTotalLabel => 'Total to record';
+
+  @override
+  String get sharedReceiptReadError =>
+      'Couldn\'t read that file automatically. You can still enter the transaction below.';
+
+  @override
   String analyticsPercentOfTotal(String percent) {
     return '$percent% of total spent';
   }

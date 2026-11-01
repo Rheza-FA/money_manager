@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 // [INJEKSI LOKALISASI]
 import '../l10n/app_localizations.dart';
 
 import '../theme/app_colors.dart';
+import 'tactile_press.dart';
 
 class BalanceOverviewCircle extends StatefulWidget {
   final double balance;
@@ -16,14 +16,14 @@ class BalanceOverviewCircle extends StatefulWidget {
   State<BalanceOverviewCircle> createState() => _BalanceOverviewCircleState();
 }
 
-class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with TickerProviderStateMixin {
+class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
+    with TickerProviderStateMixin {
   late final AnimationController _spinController;
   late final AnimationController _entranceController;
-  late final AnimationController _scaleController;
 
   late final NumberFormat _formatNumber;
 
-  bool _isObscured = false; 
+  bool _isObscured = false;
 
   @override
   void initState() {
@@ -42,14 +42,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
 
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400), 
-    );
-
-    _scaleController = AnimationController(
-      vsync: this,
-      lowerBound: 0.85,
-      upperBound: 1.0,
-      value: 1.0, 
+      duration: const Duration(milliseconds: 1400),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -63,46 +56,30 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
   void dispose() {
     _spinController.dispose();
     _entranceController.dispose();
-    _scaleController.dispose();
     super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    HapticFeedback.lightImpact(); 
-    _scaleController.animateTo(0.96, duration: const Duration(milliseconds: 100), curve: Curves.easeOutQuad);
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    HapticFeedback.mediumImpact(); 
-    _scaleController.animateTo(1.0, duration: const Duration(milliseconds: 600), curve: Curves.elasticOut);
-
-    setState(() {
-      _isObscured = !_isObscured;
-    });
-  }
-
-  void _onTapCancel() {
-    _scaleController.animateTo(1.0, duration: const Duration(milliseconds: 600), curve: Curves.elasticOut);
   }
 
   @override
   Widget build(BuildContext context) {
     // [BEST PRACTICE: Cache kamus]
     final l10n = AppLocalizations.of(context)!;
-    
+    final bool isNegative = widget.balance < 0;
+    final String formattedMagnitude = _formatNumber.format(widget.balance.abs());
+    final String currencyPrefix = (!_isObscured && isNegative) ? '-Rp' : 'Rp';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: AspectRatio(
         aspectRatio: 1,
-        child: GestureDetector(
-          onTapDown: _onTapDown,
-          onTapUp: _onTapUp,
-          onTapCancel: _onTapCancel,
-          behavior: HitTestBehavior.opaque,
-          child: ScaleTransition(
-            scale: _scaleController, 
-            child: Stack(
-              children: [
+        child: TactileTap(
+          pressedScale: 0.965,
+          onTap: () {
+            setState(() {
+              _isObscured = !_isObscured;
+            });
+          },
+          child: Stack(
+            children: [
                 // 1. Lapangan Belakang
                 Container(
                   decoration: BoxDecoration(
@@ -121,111 +98,134 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle> with Tick
 
                 // 2. Lapisan Tengah (Aura)
                 Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge([_spinController, _entranceController]),
-                    builder: (context, child) {
-                      return CustomPaint(
-                        painter: _AuraRingPainter(
-                          rotation: _spinController.value * 2 * math.pi,
-                          entranceProgress: _entranceController.value,
-                        ),
-                      );
-                    },
+                  child: RepaintBoundary(
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge(
+                        [_spinController, _entranceController],
+                      ),
+                      builder: (context, child) {
+                        return CustomPaint(
+                          painter: _AuraRingPainter(
+                            rotation: _spinController.value * 2 * math.pi,
+                            entranceProgress: _entranceController.value,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
 
                 // 3. Lapisan Depan (Teks)
                 Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        l10n.totalBalance, // [INJEKSI LOKALISASI]
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.greyText.withValues(alpha: 0.8),
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              "Rp",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: _isObscured 
-                                    ? AppColors.greyText.withValues(alpha: 0.5) 
-                                    : AppColors.primaryDark.withValues(alpha: 0.7),
-                              ),
-                            ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          l10n.totalBalance, // [INJEKSI LOKALISASI]
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.greyText.withValues(alpha: 0.8),
+                            letterSpacing: 1.2,
                           ),
-                          const SizedBox(width: 4),
-
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            switchInCurve: Curves.easeOutQuart,
-                            switchOutCurve: Curves.easeInQuad,
-                            transitionBuilder: (child, animation) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
-                                  child: child,
+                        ),
+                        const SizedBox(height: 8),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Text(
+                                  currencyPrefix,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: _isObscured
+                                        ? AppColors.greyText
+                                            .withValues(alpha: 0.5)
+                                        : AppColors.primaryDark
+                                            .withValues(alpha: 0.7),
+                                  ),
                                 ),
-                              );
-                            },
-                            child: Text(
-                              _isObscured ? "• • • • • • •" : _formatNumber.format(widget.balance),
-                              key: ValueKey<bool>(_isObscured),
-                              style: TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.w800,
-                                color: _isObscured ? AppColors.greyText : AppColors.primaryDark,
-                                height: 1.1,
-                                letterSpacing: _isObscured ? 1.0 : -1.0, 
                               ),
-                            ),
+                              const SizedBox(width: 4),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 350),
+                                switchInCurve: Curves.easeOutQuart,
+                                switchOutCurve: Curves.easeInQuad,
+                                transitionBuilder: (child, animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(
+                                      scale: Tween<double>(begin: 0.96, end: 1.0)
+                                          .animate(animation),
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  _isObscured
+                                      ? '• • • • • • •'
+                                      : formattedMagnitude,
+                                  key: ValueKey<String>(
+                                    _isObscured
+                                        ? 'obscured'
+                                        : '${isNegative ? "-" : ""}$formattedMagnitude',
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.w800,
+                                    color: _isObscured
+                                        ? AppColors.greyText
+                                        : AppColors.primaryDark,
+                                    height: 1.1,
+                                    letterSpacing: _isObscured ? 1.0 : -1.0,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-                        child: Row(
-                          key: ValueKey<bool>(_isObscured),
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isObscured ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                              size: 14,
-                              color: AppColors.accentGreen,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              _isObscured ? l10n.tapToReveal : l10n.tapToHide, // [INJEKSI LOKALISASI]
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.greyText,
-                              ),
-                            ),
-                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) =>
+                              FadeTransition(opacity: animation, child: child),
+                          child: Row(
+                            key: ValueKey<bool>(_isObscured),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isObscured
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
+                                size: 14,
+                                color: AppColors.accentGreen,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _isObscured
+                                    ? l10n.tapToReveal
+                                    : l10n.tapToHide,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.greyText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ),
           ),
         ),
       ),
@@ -259,25 +259,25 @@ class _AuraRingPainter extends CustomPainter {
 
     final auraPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0 
+      ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round
       ..shader = SweepGradient(
         colors: [
           Colors.transparent,
           AppColors.accentGreen.withValues(alpha: 0.1),
-          AppColors.accentGreen.withValues(alpha: 0.40), 
+          AppColors.accentGreen.withValues(alpha: 0.40),
           AppColors.accentGreen.withValues(alpha: 0.1),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.25, 0.5, 0.75, 1.0], 
+        stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
         transform: GradientRotation(gradientRotation),
       ).createShader(rect);
 
     final glowPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 16.0 
+      ..strokeWidth = 16.0
       ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16.0) 
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16.0)
       ..shader = auraPaint.shader;
 
     canvas.drawArc(rect, startAngle, sweepAngle, false, glowPaint);
@@ -286,7 +286,7 @@ class _AuraRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _AuraRingPainter oldDelegate) {
-    return oldDelegate.rotation != rotation || 
-           oldDelegate.entranceProgress != entranceProgress;
+    return oldDelegate.rotation != rotation ||
+        oldDelegate.entranceProgress != entranceProgress;
   }
 }

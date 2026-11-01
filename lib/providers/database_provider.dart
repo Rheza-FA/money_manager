@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import '../models/expense.dart';
 import '../models/monthly_balance.dart';
 import '../models/app_settings.dart';
@@ -10,6 +10,12 @@ class DatabaseService {
 
   // --- CRUD EXPENSE ---
   Future<void> saveExpense(Expense expense) async {
+    // Stamp the first-save moment on inserts only. Updates keep their original
+    // stamp (or none, for legacy rows) so editing history never shifts today's
+    // locked daily limit.
+    if (expense.id == Isar.autoIncrement) {
+      expense.recordedAt ??= DateTime.now();
+    }
     await isar.writeTxn(() async {
       await isar.expenses.put(expense); // Insert atau Update (jika ID sudah ada)
     });
@@ -49,6 +55,7 @@ final databaseServiceProvider = Provider<DatabaseService>((ref) {
 
 final isarProvider = Provider<Isar>((ref) => throw UnimplementedError());
 
+/// Every recorded transaction (spending and income), newest first.
 final expenseListProvider = StreamProvider<List<Expense>>((ref) {
   final isar = ref.watch(isarProvider);
   return isar.expenses.where().sortByDateDesc().watch(fireImmediately: true);

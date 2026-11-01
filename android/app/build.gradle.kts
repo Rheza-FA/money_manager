@@ -29,11 +29,30 @@ android {
         versionName = flutter.versionName
     }
 
+    androidResources {
+        // Keep bundled ML Kit OCR models uncompressed in APK so AAssetManager
+        // can zero-copy mmap them directly without heap decompression overhead.
+        noCompress += listOf(
+            "tflite",
+            "lite",
+            "fb",
+            "binarypb",
+            "pb",
+            "bincfg",
+            "conv_model",
+            "lstm_model",
+        )
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
@@ -46,4 +65,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }

@@ -21,6 +21,7 @@ class CustomDateNotifier extends Notifier<DateTime?> {
 
 final customDateProvider = NotifierProvider<CustomDateNotifier, DateTime?>(CustomDateNotifier.new);
 
+/// All records (spending and income) within the active time filter.
 final filteredExpensesProvider = Provider<List<Expense>>((ref) {
   final filter = ref.watch(timeFilterProvider);
   final allExpensesAsync = ref.watch(expenseListProvider);
@@ -44,7 +45,25 @@ final filteredExpensesProvider = Provider<List<Expense>>((ref) {
   }).toList();
 });
 
+/// Spending-only records within the active filter (income excluded).
+final filteredSpendingProvider = Provider<List<Expense>>((ref) {
+  return ref
+      .watch(filteredExpensesProvider)
+      .where((e) => !e.isIncome)
+      .toList(growable: false);
+});
+
+/// Total spending within the active filter (income excluded).
 final filteredTotalExpenseProvider = Provider<double>((ref) {
-  final filteredList = ref.watch(filteredExpensesProvider);
+  final filteredList = ref.watch(filteredSpendingProvider);
   return filteredList.fold(0.0, (sum, item) => sum + item.totalAmount);
+});
+
+/// Total incoming money within the active filter.
+final filteredTotalIncomeProvider = Provider<double>((ref) {
+  final filteredList = ref.watch(filteredExpensesProvider);
+  return filteredList.fold(
+    0.0,
+    (sum, item) => item.isIncome ? sum + item.totalAmount : sum,
+  );
 });

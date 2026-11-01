@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 // [INJEKSI LOKALISASI]
@@ -16,11 +16,12 @@ import 'models/monthly_balance.dart';
 import 'providers/database_provider.dart';
 import 'models/app_settings.dart';
 import 'screens/splash_screen.dart';
+import 'features/receipt_share/services/receipt_share_service.dart';
 
 void main() async {
   // 1. Ambil instance WidgetsBinding
   final WidgetsBinding widgetsBinding =
-      WidgetsFlutterBinding.ensureInitialized();
+      WidgetsFlutterBinding.ensureInitialized();  
 
   // 2. PERINTAHKAN OS UNTUK MENAHAN NATIVE SPLASH (WARNA HIJAU GELAP)
   // Mencegah black screen selama proses await di bawah ini berjalan.
@@ -51,6 +52,7 @@ class MoneyManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Neymo',
+      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         AppLocalizations.delegate,

@@ -67,6 +67,10 @@ app.*.map.json
 
 # Local Database Files (Mencegah file Isar/SQLite lokal ikut terunggah)
 *.isar
+*.isar.lock
+libisar.dll
+libisar.so
+libisar.dylib
 *.db
 *.sqlite
 *.sqlite3

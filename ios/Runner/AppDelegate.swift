@@ -1,3 +1,4 @@
+import CoreHaptics
 import Flutter
 import PDFKit
 import UIKit
@@ -29,9 +30,155 @@ import Vision
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-    IosReceiptShareCoordinator.shared.attach(
-      messenger: engineBridge.applicationRegistrar.messenger()
+    let messenger = engineBridge.applicationRegistrar.messenger()
+    IosTactileHapticEngine.shared.attach(messenger: messenger)
+    IosReceiptShareCoordinator.shared.attach(messenger: messenger)
+  }
+}
+
+final class IosTactileHapticEngine {
+  static let shared = IosTactileHapticEngine()
+
+  private var channel: FlutterMethodChannel?
+  private var hapticEngine: CHHapticEngine?
+  private var supportsCoreHaptics = false
+
+  private let rigidGenerator = UIImpactFeedbackGenerator(style: .rigid)
+  private let softGenerator = UIImpactFeedbackGenerator(style: .soft)
+  private let selectionGenerator = UISelectionFeedbackGenerator()
+  private let notificationGenerator = UINotificationFeedbackGenerator()
+
+  private init() {
+    supportsCoreHaptics = CHHapticEngine.capabilitiesForHardware().supportsHaptics
+    if supportsCoreHaptics {
+      configureCoreHaptics()
+    }
+    warmGenerators()
+  }
+
+  func attach(messenger: FlutterBinaryMessenger) {
+    let methodChannel = FlutterMethodChannel(
+      name: "neymo/haptics",
+      binaryMessenger: messenger
     )
+    methodChannel.setMethodCallHandler { [weak self] call, result in
+      guard let self = self else {
+        result(nil)
+        return
+      }
+      self.handle(method: call.method)
+      result(nil)
+    }
+    channel = methodChannel
+  }
+
+  private func configureCoreHaptics() {
+    do {
+      let engine = try CHHapticEngine()
+      engine.playsHapticsOnly = true
+      engine.isAutoShutdownEnabled = true
+      engine.resetHandler = { [weak self] in
+        try? self?.hapticEngine?.start()
+      }
+      hapticEngine = engine
+    } catch {
+      supportsCoreHaptics = false
+      hapticEngine = nil
+    }
+  }
+
+  private func warmGenerators() {
+    rigidGenerator.prepare()
+    softGenerator.prepare()
+    selectionGenerator.prepare()
+    notificationGenerator.prepare()
+  }
+
+  private func handle(method: String) {
+    switch method {
+    case "pressDown":
+      softGenerator.prepare()
+      if !playTransients([(time: 0.0, intensity: 0.80, sharpness: 0.94)]) {
+        rigidGenerator.impactOccurred(intensity: 0.78)
+      }
+      rigidGenerator.prepare()
+    case "releaseUp":
+      if !playTransients([(time: 0.0, intensity: 0.58, sharpness: 0.84)]) {
+        softGenerator.impactOccurred(intensity: 0.65)
+      }
+      rigidGenerator.prepare()
+    case "tapClick":
+      if !playTransients([
+        (time: 0.0, intensity: 0.82, sharpness: 0.94),
+        (time: 0.062, intensity: 0.58, sharpness: 0.84),
+      ]) {
+        rigidGenerator.impactOccurred(intensity: 0.80)
+        softGenerator.prepare()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.062) { [weak self] in
+          self?.softGenerator.impactOccurred(intensity: 0.65)
+          self?.rigidGenerator.prepare()
+        }
+      } else {
+        rigidGenerator.prepare()
+      }
+    case "primaryClick":
+      if !playTransients([
+        (time: 0.0, intensity: 0.94, sharpness: 0.96),
+        (time: 0.064, intensity: 0.64, sharpness: 0.86),
+      ]) {
+        rigidGenerator.impactOccurred(intensity: 0.95)
+        softGenerator.prepare()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.064) { [weak self] in
+          self?.softGenerator.impactOccurred(intensity: 0.72)
+          self?.rigidGenerator.prepare()
+        }
+      } else {
+        rigidGenerator.prepare()
+      }
+    case "softDetent":
+      if !playTransients([(time: 0.0, intensity: 0.55, sharpness: 0.86)]) {
+        selectionGenerator.selectionChanged()
+      }
+      selectionGenerator.prepare()
+    case "destructive":
+      if !playTransients([(time: 0.0, intensity: 0.96, sharpness: 0.96)]) {
+        rigidGenerator.impactOccurred(intensity: 1.0)
+      }
+      rigidGenerator.prepare()
+    case "success":
+      notificationGenerator.notificationOccurred(.success)
+      notificationGenerator.prepare()
+    case "error":
+      notificationGenerator.notificationOccurred(.error)
+      notificationGenerator.prepare()
+    default:
+      break
+    }
+  }
+
+  private func playTransients(
+    _ pulses: [(time: TimeInterval, intensity: Float, sharpness: Float)]
+  ) -> Bool {
+    guard supportsCoreHaptics, let engine = hapticEngine else { return false }
+    do {
+      try engine.start()
+      let events = pulses.map { pulse in
+        CHHapticEvent(
+          eventType: .hapticTransient,
+          parameters: [
+            CHHapticEventParameter(parameterID: .hapticIntensity, value: pulse.intensity),
+            CHHapticEventParameter(parameterID: .hapticSharpness, value: pulse.sharpness),
+          ],
+          relativeTime: pulse.time
+        )
+      }
+      let pattern = try CHHapticPattern(events: events, parameters: [])
+      let player = try engine.makePlayer(with: pattern)
+      try player.start(atTime: CHHapticTimeImmediate)
+      return true
+    } catch {
+      return false
+    }
   }
 }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 // [INJEKSI LOKALISASI]
@@ -8,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../providers/calculator_provider.dart';
 import '../providers/database_provider.dart';
 import '../theme/app_colors.dart';
+import 'tactile_press.dart';
 
 class DailyLimitCard extends ConsumerStatefulWidget {
   final double maxDaily;
@@ -130,31 +130,33 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard>
                 if (isZero)
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: AnimatedBuilder(
-                        animation: _shimmerController,
-                        builder: (context, child) {
-                          final progress = _shimmerController.value;
-                          if (progress > 0.25) return const SizedBox.shrink();
+                      child: RepaintBoundary(
+                        child: AnimatedBuilder(
+                          animation: _shimmerController,
+                          builder: (context, child) {
+                            final progress = _shimmerController.value;
+                            if (progress > 0.25) return const SizedBox.shrink();
 
-                          final sweepPos = (progress / 0.25);
-                          final alignVal = -2.0 + (sweepPos * 4.0);
+                            final sweepPos = (progress / 0.25);
+                            final alignVal = -2.0 + (sweepPos * 4.0);
 
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.transparent,
-                                  AppColors.white.withValues(alpha: 0.15),
-                                  Colors.transparent,
-                                ],
-                                stops: const [0.3, 0.5, 0.7],
-                                begin:
-                                    Alignment(alignVal - 1.0, alignVal - 1.0),
-                                end: Alignment(alignVal + 1.0, alignVal + 1.0),
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    AppColors.white.withValues(alpha: 0.15),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.3, 0.5, 0.7],
+                                  begin:
+                                      Alignment(alignVal - 1.0, alignVal - 1.0),
+                                  end: Alignment(alignVal + 1.0, alignVal + 1.0),
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -209,14 +211,12 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard>
                   ),
                 ],
               ),
-              GestureDetector(
+              TactileTap(
                 onTap: () {
-                  HapticFeedback.lightImpact();
                   ref
                       .read(databaseServiceProvider)
                       .toggleSpendingMode(!isBiWeekly);
                 },
-                behavior: HitTestBehavior.opaque,
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -292,31 +292,33 @@ class _DailyLimitCardState extends ConsumerState<DailyLimitCard>
           ),
           if (showIntradayPacing) ...[
             const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: Container(
-                height: 4,
-                width: double.infinity,
-                color: AppColors.white.withValues(alpha: 0.12),
-                alignment: Alignment.centerLeft,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.0, end: progressRatio),
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, _) {
-                    return FractionallySizedBox(
-                      widthFactor: value,
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isOver
-                              ? _overLimitCoral
-                              : AppColors.accentGreen,
-                          borderRadius: BorderRadius.circular(99),
+            RepaintBoundary(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: Container(
+                  height: 4,
+                  width: double.infinity,
+                  color: AppColors.white.withValues(alpha: 0.12),
+                  alignment: Alignment.centerLeft,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.0, end: progressRatio),
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) {
+                      return FractionallySizedBox(
+                        widthFactor: value,
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isOver
+                                ? _overLimitCoral
+                                : AppColors.accentGreen,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

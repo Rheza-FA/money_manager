@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar_community/isar.dart';
 import '../l10n/app_localizations.dart';
 import '../models/expense.dart';
 import '../providers/calculator_provider.dart';
 import '../providers/database_provider.dart';
+import '../services/app_haptics.dart';
 import '../theme/app_colors.dart';
+import 'tactile_press.dart';
 
 class InputBottomSheet extends ConsumerStatefulWidget {
   final Expense? expenseToEdit;
@@ -62,14 +63,13 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
   void _setupFocusHaptics(List<FocusNode> nodes) {
     for (final node in nodes) {
       node.addListener(() {
-        if (node.hasFocus) HapticFeedback.selectionClick();
+        if (node.hasFocus) AppHaptics.softDetent();
       });
     }
   }
 
   void _toggleTab(bool toExpense) {
     if (isExpenseTab == toExpense) return;
-    HapticFeedback.lightImpact();
     setState(() => isExpenseTab = toExpense);
   }
 
@@ -115,7 +115,7 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
     }
 
     if (isValid && mounted) {
-      HapticFeedback.heavyImpact();
+      AppHaptics.success();
       FocusScope.of(context).unfocus();
 
       setState(() {
@@ -126,7 +126,7 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
 
       if (mounted) Navigator.pop(context);
     } else {
-      HapticFeedback.vibrate();
+      AppHaptics.error();
     }
   }
 
@@ -185,58 +185,62 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () => _toggleTab(true),
-                        behavior: HitTestBehavior.opaque,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isExpenseTab
-                                ? AppColors.primaryDark
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow:
-                                isExpenseTab ? AppColors.softShadow : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            l10n.expenseTab,
-                            style: TextStyle(
+                      child: TactilePress(
+                        child: GestureDetector(
+                          onTap: () => _toggleTab(true),
+                          behavior: HitTestBehavior.opaque,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
                               color: isExpenseTab
-                                  ? AppColors.white
-                                  : AppColors.greyText,
-                              fontWeight: FontWeight.w600,
+                                  ? AppColors.primaryDark
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow:
+                                  isExpenseTab ? AppColors.softShadow : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              l10n.expenseTab,
+                              style: TextStyle(
+                                color: isExpenseTab
+                                    ? AppColors.white
+                                    : AppColors.greyText,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () => _toggleTab(false),
-                        behavior: HitTestBehavior.opaque,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: !isExpenseTab
-                                ? AppColors.primaryDark
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow:
-                                !isExpenseTab ? AppColors.softShadow : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            l10n.setBalanceTab,
-                            style: TextStyle(
+                      child: TactilePress(
+                        child: GestureDetector(
+                          onTap: () => _toggleTab(false),
+                          behavior: HitTestBehavior.opaque,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
                               color: !isExpenseTab
-                                  ? AppColors.white
-                                  : AppColors.greyText,
-                              fontWeight: FontWeight.w600,
+                                  ? AppColors.primaryDark
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow:
+                                  !isExpenseTab ? AppColors.softShadow : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              l10n.setBalanceTab,
+                              style: TextStyle(
+                                color: !isExpenseTab
+                                    ? AppColors.white
+                                    : AppColors.greyText,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -287,42 +291,46 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
                     ),
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _submitData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _isSuccess ? AppColors.accentGreen : AppColors.primaryDark,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+            TactilePress(
+              enabled: !_isSuccess,
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _submitData,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isSuccess
+                        ? AppColors.accentGreen
+                        : AppColors.primaryDark,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
+                    animationDuration: const Duration(milliseconds: 300),
                   ),
-                  elevation: 0,
-                  animationDuration: const Duration(milliseconds: 300),
-                ),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  switchInCurve: Curves.elasticOut,
-                  switchOutCurve: Curves.easeInBack,
-                  transitionBuilder: (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-                  child: _isSuccess
-                      ? const Icon(
-                          Icons.check_circle_rounded,
-                          key: ValueKey('success'),
-                          size: 28,
-                          color: AppColors.white,
-                        )
-                      : Text(
-                          key: const ValueKey('text'),
-                          isEditMode ? l10n.updateData : l10n.saveData,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    switchInCurve: Curves.elasticOut,
+                    switchOutCurve: Curves.easeInBack,
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: _isSuccess
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            key: ValueKey('success'),
+                            size: 28,
+                            color: AppColors.white,
+                          )
+                        : Text(
+                            key: const ValueKey('text'),
+                            isEditMode ? l10n.updateData : l10n.saveData,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
+                  ),
                 ),
               ),
             ),
@@ -352,64 +360,66 @@ class _InputBottomSheetState extends ConsumerState<InputBottomSheet> {
             child: Row(
               children: [
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      if (_isIncome) {
-                        HapticFeedback.selectionClick();
-                        setState(() => _isIncome = false);
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(vertical: 9),
-                      decoration: BoxDecoration(
-                        color: !_isIncome
-                            ? AppColors.primaryDark
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        l10n.transactionTypeExpense,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                  child: TactilePress(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_isIncome) {
+                          setState(() => _isIncome = false);
+                        }
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(
                           color: !_isIncome
-                              ? AppColors.white
-                              : AppColors.greyText,
+                              ? AppColors.primaryDark
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          l10n.transactionTypeExpense,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: !_isIncome
+                                ? AppColors.white
+                                : AppColors.greyText,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      if (!_isIncome) {
-                        HapticFeedback.selectionClick();
-                        setState(() => _isIncome = true);
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(vertical: 9),
-                      decoration: BoxDecoration(
-                        color: _isIncome
-                            ? AppColors.incomeEmerald
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        l10n.transactionTypeIncome,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                  child: TactilePress(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (!_isIncome) {
+                          setState(() => _isIncome = true);
+                        }
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(
                           color: _isIncome
-                              ? AppColors.white
-                              : AppColors.greyText,
+                              ? AppColors.incomeEmerald
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          l10n.transactionTypeIncome,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _isIncome
+                                ? AppColors.white
+                                : AppColors.greyText,
+                          ),
                         ),
                       ),
                     ),

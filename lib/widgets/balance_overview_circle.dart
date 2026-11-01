@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 // [INJEKSI LOKALISASI]
 import '../l10n/app_localizations.dart';
 
 import '../theme/app_colors.dart';
+import 'tactile_press.dart';
 
 class BalanceOverviewCircle extends StatefulWidget {
   final double balance;
@@ -20,7 +20,6 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
     with TickerProviderStateMixin {
   late final AnimationController _spinController;
   late final AnimationController _entranceController;
-  late final AnimationController _scaleController;
 
   late final NumberFormat _formatNumber;
 
@@ -46,13 +45,6 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
       duration: const Duration(milliseconds: 1400),
     );
 
-    _scaleController = AnimationController(
-      vsync: this,
-      lowerBound: 0.85,
-      upperBound: 1.0,
-      value: 1.0,
-    );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _entranceController.animateTo(1.0, curve: Curves.easeOutCubic);
@@ -64,38 +56,7 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
   void dispose() {
     _spinController.dispose();
     _entranceController.dispose();
-    _scaleController.dispose();
     super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    HapticFeedback.lightImpact();
-    _scaleController.animateTo(
-      0.96,
-      duration: const Duration(milliseconds: 100),
-      curve: Curves.easeOutQuad,
-    );
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    HapticFeedback.mediumImpact();
-    _scaleController.animateTo(
-      1.0,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.elasticOut,
-    );
-
-    setState(() {
-      _isObscured = !_isObscured;
-    });
-  }
-
-  void _onTapCancel() {
-    _scaleController.animateTo(
-      1.0,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.elasticOut,
-    );
   }
 
   @override
@@ -110,15 +71,15 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: AspectRatio(
         aspectRatio: 1,
-        child: GestureDetector(
-          onTapDown: _onTapDown,
-          onTapUp: _onTapUp,
-          onTapCancel: _onTapCancel,
-          behavior: HitTestBehavior.opaque,
-          child: ScaleTransition(
-            scale: _scaleController,
-            child: Stack(
-              children: [
+        child: TactileTap(
+          pressedScale: 0.965,
+          onTap: () {
+            setState(() {
+              _isObscured = !_isObscured;
+            });
+          },
+          child: Stack(
+            children: [
                 // 1. Lapangan Belakang
                 Container(
                   decoration: BoxDecoration(
@@ -137,18 +98,20 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
 
                 // 2. Lapisan Tengah (Aura)
                 Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge(
-                      [_spinController, _entranceController],
+                  child: RepaintBoundary(
+                    child: AnimatedBuilder(
+                      animation: Listenable.merge(
+                        [_spinController, _entranceController],
+                      ),
+                      builder: (context, child) {
+                        return CustomPaint(
+                          painter: _AuraRingPainter(
+                            rotation: _spinController.value * 2 * math.pi,
+                            entranceProgress: _entranceController.value,
+                          ),
+                        );
+                      },
                     ),
-                    builder: (context, child) {
-                      return CustomPaint(
-                        painter: _AuraRingPainter(
-                          rotation: _spinController.value * 2 * math.pi,
-                          entranceProgress: _entranceController.value,
-                        ),
-                      );
-                    },
                   ),
                 ),
 
@@ -263,7 +226,6 @@ class _BalanceOverviewCircleState extends State<BalanceOverviewCircle>
                   ),
                 ),
               ],
-            ),
           ),
         ),
       ),

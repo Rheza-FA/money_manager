@@ -8,7 +8,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../../models/expense.dart';
 import '../../../providers/database_provider.dart';
 import '../../../providers/history_provider.dart';
+import '../../../services/app_haptics.dart';
 import '../../../theme/app_colors.dart';
+import '../../../widgets/tactile_press.dart';
 import '../models/shared_receipt.dart';
 import '../services/receipt_share_service.dart';
 
@@ -65,7 +67,7 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
       _priceFocus,
     ]) {
       node.addListener(() {
-        if (node.hasFocus) HapticFeedback.selectionClick();
+        if (node.hasFocus) AppHaptics.softDetent();
       });
     }
 
@@ -139,7 +141,7 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
     });
 
     if (transitionedFromScan) {
-      HapticFeedback.mediumImpact();
+      AppHaptics.success();
     }
 
     // Only auto-focus if a required field is missing; when complete, keep the
@@ -158,7 +160,6 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
     final int current = int.tryParse(_qtyController.text.trim()) ?? 1;
     final int next = (current + delta).clamp(1, 999);
     if (next == current) return;
-    HapticFeedback.selectionClick();
     setState(() {
       _qtyController.text = next.toString();
     });
@@ -174,7 +175,6 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
   }
 
   Future<void> _pickDate() async {
-    HapticFeedback.selectionClick();
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -218,7 +218,7 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
     final double price = double.tryParse(priceDigits) ?? 0.0;
 
     if (name.isEmpty || qty <= 0 || price <= 0) {
-      HapticFeedback.vibrate();
+      AppHaptics.error();
       if (name.isEmpty) {
         _nameFocus.requestFocus();
       } else {
@@ -242,7 +242,7 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
     _ensureTransactionVisibleInActiveFilter(_selectedDate);
 
     if (!mounted) return;
-    HapticFeedback.heavyImpact();
+    AppHaptics.success();
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -474,7 +474,7 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
           spacing: 8,
           runSpacing: 8,
           children: <Widget>[
-            GestureDetector(
+            TactileTap(
               onTap: _pickDate,
               child: Container(
                 padding:
@@ -505,9 +505,8 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
               ),
             ),
             if (rawLines.isNotEmpty)
-              GestureDetector(
+              TactileTap(
                 onTap: () {
-                  HapticFeedback.selectionClick();
                   setState(() => _showRawText = !_showRawText);
                 },
                 child: Container(
@@ -592,61 +591,66 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
           child: Row(
             children: <Widget>[
               Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (_isIncome) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _isIncome = false);
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color:
-                          !_isIncome ? AppColors.primaryDark : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: !_isIncome ? AppColors.softShadow : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      l10n.transactionTypeExpense,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: !_isIncome ? AppColors.white : AppColors.greyText,
+                child: TactilePress(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (_isIncome) {
+                        setState(() => _isIncome = false);
+                      }
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: !_isIncome
+                            ? AppColors.primaryDark
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: !_isIncome ? AppColors.softShadow : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        l10n.transactionTypeExpense,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              !_isIncome ? AppColors.white : AppColors.greyText,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
               Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    if (!_isIncome) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _isIncome = true);
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _isIncome
-                          ? AppColors.incomeEmerald
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: _isIncome ? AppColors.softShadow : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      l10n.transactionTypeIncome,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _isIncome ? AppColors.white : AppColors.greyText,
+                child: TactilePress(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (!_isIncome) {
+                        setState(() => _isIncome = true);
+                      }
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _isIncome
+                            ? AppColors.incomeEmerald
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: _isIncome ? AppColors.softShadow : null,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        l10n.transactionTypeIncome,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              _isIncome ? AppColors.white : AppColors.greyText,
+                        ),
                       ),
                     ),
                   ),
@@ -710,9 +714,8 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
                     candidate.toLowerCase();
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
+                  child: TactileTap(
                     onTap: () {
-                      HapticFeedback.selectionClick();
                       setState(() {
                         _nameController.text = candidate;
                       });
@@ -819,45 +822,49 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
         const SizedBox(height: 20),
 
         // Primary Save CTA
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isSuccess
-                  ? AppColors.accentGreen
-                  : (_isIncome
-                      ? AppColors.incomeEmerald
-                      : AppColors.primaryDark),
-              foregroundColor: AppColors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+        TactilePress(
+          enabled: !_isSaving && !_isSuccess,
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isSuccess
+                    ? AppColors.accentGreen
+                    : (_isIncome
+                        ? AppColors.incomeEmerald
+                        : AppColors.primaryDark),
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
+                animationDuration: const Duration(milliseconds: 300),
               ),
-              elevation: 0,
-              animationDuration: const Duration(milliseconds: 300),
-            ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              switchInCurve: Curves.elasticOut,
-              switchOutCurve: Curves.easeInBack,
-              transitionBuilder: (Widget child, Animation<double> animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: _isSuccess
-                  ? const Icon(
-                      Icons.check_circle_rounded,
-                      key: ValueKey<String>('success'),
-                      size: 28,
-                      color: AppColors.white,
-                    )
-                  : Text(
-                      l10n.sharedReceiptSaveButton,
-                      key: const ValueKey<String>('save_label'),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                switchInCurve: Curves.elasticOut,
+                switchOutCurve: Curves.easeInBack,
+                transitionBuilder:
+                    (Widget child, Animation<double> animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                child: _isSuccess
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        key: ValueKey<String>('success'),
+                        size: 28,
+                        color: AppColors.white,
+                      )
+                    : Text(
+                        l10n.sharedReceiptSaveButton,
+                        key: const ValueKey<String>('save_label'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
+              ),
             ),
           ),
         ),
@@ -933,26 +940,32 @@ class _SharedReceiptSheetState extends ConsumerState<SharedReceiptSheet>
           width: 36,
           height: 48,
         ),
-        prefixIcon: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: canDecrement ? () => _stepQuantity(-1) : null,
-          child: Icon(
-            Icons.remove_rounded,
-            size: 18,
-            color: canDecrement
-                ? AppColors.primaryLight
-                : AppColors.greyText.withValues(alpha: 0.35),
+        prefixIcon: TactilePress(
+          enabled: canDecrement,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: canDecrement ? () => _stepQuantity(-1) : null,
+            child: Icon(
+              Icons.remove_rounded,
+              size: 18,
+              color: canDecrement
+                  ? AppColors.primaryLight
+                  : AppColors.greyText.withValues(alpha: 0.35),
+            ),
           ),
         ),
-        suffixIcon: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: canIncrement ? () => _stepQuantity(1) : null,
-          child: Icon(
-            Icons.add_rounded,
-            size: 18,
-            color: canIncrement
-                ? AppColors.primaryLight
-                : AppColors.greyText.withValues(alpha: 0.35),
+        suffixIcon: TactilePress(
+          enabled: canIncrement,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: canIncrement ? () => _stepQuantity(1) : null,
+            child: Icon(
+              Icons.add_rounded,
+              size: 18,
+              color: canIncrement
+                  ? AppColors.primaryLight
+                  : AppColors.greyText.withValues(alpha: 0.35),
+            ),
           ),
         ),
         filled: true,
